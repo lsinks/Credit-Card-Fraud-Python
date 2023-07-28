@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.433">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Louise E. Sinks">
+<meta name="dcterms.date" content="2023-07-26">
+<meta name="description" content="An Imbalanced Class Problem">
+
+<title>Credit Card Fraud: Python Tutorial</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="python_fraud_testing quarto_files/libs/clipboard/clipboard.min.js"></script>
+<script src="python_fraud_testing quarto_files/libs/quarto-html/quarto.js"></script>
+<script src="python_fraud_testing quarto_files/libs/quarto-html/popper.min.js"></script>
+<script src="python_fraud_testing quarto_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="python_fraud_testing quarto_files/libs/quarto-html/anchor.min.js"></script>
+<link href="python_fraud_testing quarto_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="python_fraud_testing quarto_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="python_fraud_testing quarto_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="python_fraud_testing quarto_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="python_fraud_testing quarto_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Credit Card Fraud: Python Tutorial</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">Python</div>
+    <div class="quarto-category">Machine Learning</div>
+    <div class="quarto-category">classifiers</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    An Imbalanced Class Problem
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p><a href="https://lsinks.github.io/">Louise E. Sinks</a> </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">July 26, 2023</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="classification-using-sck-kit-learn" class="level1">
+<h1>1. Classification using sck-kit-learn</h1>
+<p>I will walk through a classification problem from importing the data, cleaning, exploring, fitting, choosing a model, and finalizing the model.</p>
+<p>I wanted to create a project that could serve as a template for other two-class classification problems.</p>
+<p>In addition to providing a template for the machine learning portion, I wanted to create nice figures and tables that could also be re-used.</p>
+<p>Please feel free to copy and use any of my code in your work. I’d appreciate an acknowledgment or link back if you find this tutorial useful.</p>
+</section>
+<section id="the-problem-predicting-credit-card-fraud" class="level1">
+<h1>2. The problem: predicting credit card fraud</h1>
+<p>The goal of the project is to correctly predict fraudulent credit card transactions.</p>
+<p>The specific problem is one provided by Datacamp as a challenge in the certification community. The dataset (Credit Card Fraud) can also be found at the Datacamp workspace. To access the dataset and the data dictionary, you can create a new notebook on datacamp using the Credit Card Fraud dataset. That will produce a notebook like <a href="https://app.datacamp.com/workspace/w/f3a94059-683b-4bc6-b354-9b98cf3d5242/edit">this</a> with the dataset and the data dictionary.</p>
+<p>The original source of the data (prior to preparation by DataCamp) can be found <a href="https://www.kaggle.com/kartik2112/fraud-detection?select=fraudTrain.csv">here</a>.</p>
+</section>
+<section id="set-up-steps" class="level1">
+<h1>3. Set-up steps</h1>
+<p>Loading the necessary libraries.</p>
+<div id="loading-libraries" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> skimpy <span class="im">import</span> skim</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>I’m setting a global theme for my figures. I’m using <a href="https://wilkelab.org/cowplot/index.html">cowplot</a> to create some composite figures, and apparently you must choose a cowplot theme if you set a global theme. You can use a ggtheme on a graph by graph basis, but not globally.</p>
+<div id="fig-options" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">#from skimpy import skim</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<figcaption class="figure-caption">Figure&nbsp;1: <strong>?(caption)</strong></figcaption>
+</figure>
+</div>
+<p>Loading the data. This is a local copy that is part of the workspace download from Datacamp.</p>
+<div id="import-data" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>fraud <span class="op">=</span> pd.read_csv(<span class="st">"credit_card_fraud.csv"</span>, parse_dates <span class="op">=</span> [<span class="st">"dob"</span>, <span class="st">"trans_date_trans_time"</span>]) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Looking at the data</p>
+<div class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>fraud.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="4">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">trans_date_trans_time</th>
+<th data-quarto-table-cell-role="th">merchant</th>
+<th data-quarto-table-cell-role="th">category</th>
+<th data-quarto-table-cell-role="th">amt</th>
+<th data-quarto-table-cell-role="th">city</th>
+<th data-quarto-table-cell-role="th">state</th>
+<th data-quarto-table-cell-role="th">lat</th>
+<th data-quarto-table-cell-role="th">long</th>
+<th data-quarto-table-cell-role="th">city_pop</th>
+<th data-quarto-table-cell-role="th">job</th>
+<th data-quarto-table-cell-role="th">dob</th>
+<th data-quarto-table-cell-role="th">trans_num</th>
+<th data-quarto-table-cell-role="th">merch_lat</th>
+<th data-quarto-table-cell-role="th">merch_long</th>
+<th data-quarto-table-cell-role="th">is_fraud</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>2019-01-01 00:00:44</td>
+<td>Heller, Gutmann and Zieme</td>
+<td>grocery_pos</td>
+<td>107.23</td>
+<td>Orient</td>
+<td>WA</td>
+<td>48.8878</td>
+<td>-118.2105</td>
+<td>149</td>
+<td>Special educational needs teacher</td>
+<td>1978-06-21</td>
+<td>1f76529f8574734946361c461b024d99</td>
+<td>49.159047</td>
+<td>-118.186462</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2019-01-01 00:00:51</td>
+<td>Lind-Buckridge</td>
+<td>entertainment</td>
+<td>220.11</td>
+<td>Malad City</td>
+<td>ID</td>
+<td>42.1808</td>
+<td>-112.2620</td>
+<td>4154</td>
+<td>Nature conservation officer</td>
+<td>1962-01-19</td>
+<td>a1a22d70485983eac12b5b88dad1cf95</td>
+<td>43.150704</td>
+<td>-112.154481</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>2019-01-01 00:07:27</td>
+<td>Kiehn Inc</td>
+<td>grocery_pos</td>
+<td>96.29</td>
+<td>Grenada</td>
+<td>CA</td>
+<td>41.6125</td>
+<td>-122.5258</td>
+<td>589</td>
+<td>Systems analyst</td>
+<td>1945-12-21</td>
+<td>413636e759663f264aae1819a4d4f231</td>
+<td>41.657520</td>
+<td>-122.230347</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>2019-01-01 00:09:03</td>
+<td>Beier-Hyatt</td>
+<td>shopping_pos</td>
+<td>7.77</td>
+<td>High Rolls Mountain Park</td>
+<td>NM</td>
+<td>32.9396</td>
+<td>-105.8189</td>
+<td>899</td>
+<td>Naval architect</td>
+<td>1967-08-30</td>
+<td>8a6293af5ed278dea14448ded2685fea</td>
+<td>32.863258</td>
+<td>-106.520205</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>2019-01-01 00:21:32</td>
+<td>Bruen-Yost</td>
+<td>misc_pos</td>
+<td>6.85</td>
+<td>Freedom</td>
+<td>WY</td>
+<td>43.0172</td>
+<td>-111.0292</td>
+<td>471</td>
+<td>Education officer, museum</td>
+<td>1967-08-02</td>
+<td>f3c43d336e92a44fc2fb67058d5949e3</td>
+<td>43.753735</td>
+<td>-111.454923</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</section>
+<section id="validation-of-data-types" class="level1">
+<h1>4. Validation of data types</h1>
+<p>I examine the dataset via <code>skim</code> and make sure all data elements are as expected. <code>skim</code> is a function in the <a href="https://cran.r-project.org/web/packages/skimr/index.html">skimr package</a> that provides a high-level summary of the data. The output is a dataframe, <a href="https://lsinks.github.io/posts/2023-03-24-tidytuesday-figure-polishing/#skimr-to-understand-your-data">so it can be manipulated and formatted more nicely</a> than the output of <code>summary()</code>.</p>
+<div class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Code Block 5: Validation of Data Types Against Data Dictionary</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co"># custom skim function to remore some of the quartile data</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>fraud.describe()</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>fraud.info()</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>skim(fraud)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>&lt;class 'pandas.core.frame.DataFrame'&gt;
+RangeIndex: 339607 entries, 0 to 339606
+Data columns (total 15 columns):
+ #   Column                 Non-Null Count   Dtype         
+---  ------                 --------------   -----         
+ 0   trans_date_trans_time  339607 non-null  datetime64[ns]
+ 1   merchant               339607 non-null  object        
+ 2   category               339607 non-null  object        
+ 3   amt                    339607 non-null  float64       
+ 4   city                   339607 non-null  object        
+ 5   state                  339607 non-null  object        
+ 6   lat                    339607 non-null  float64       
+ 7   long                   339607 non-null  float64       
+ 8   city_pop               339607 non-null  int64         
+ 9   job                    339607 non-null  object        
+ 10  dob                    339607 non-null  datetime64[ns]
+ 11  trans_num              339607 non-null  object        
+ 12  merch_lat              339607 non-null  float64       
+ 13  merch_long             339607 non-null  float64       
+ 14  is_fraud               339607 non-null  int64         
+dtypes: datetime64[ns](2), float64(5), int64(2), object(6)
+memory usage: 38.9+ MB</code></pre>
+</div>
+<div id="skim-data" class="cell-output cell-output-display">
+<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">╭──────────────────────────────────────────────── skimpy summary ─────────────────────────────────────────────────╮
+│ <span style="font-style: italic">         Data Summary         </span> <span style="font-style: italic">      Data Types       </span>                                                          │
+│ ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┓ ┏━━━━━━━━━━━━━┳━━━━━━━┓                                                          │
+│ ┃<span style="color: #008080; text-decoration-color: #008080; font-weight: bold"> dataframe         </span>┃<span style="color: #008080; text-decoration-color: #008080; font-weight: bold"> Values </span>┃ ┃<span style="color: #008080; text-decoration-color: #008080; font-weight: bold"> Column Type </span>┃<span style="color: #008080; text-decoration-color: #008080; font-weight: bold"> Count </span>┃                                                          │
+│ ┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━┩ ┡━━━━━━━━━━━━━╇━━━━━━━┩                                                          │
+│ │ Number of rows    │ 339607 │ │ string      │ 6     │                                                          │
+│ │ Number of columns │ 15     │ │ float64     │ 5     │                                                          │
+│ └───────────────────┴────────┘ │ datetime64  │ 2     │                                                          │
+│                                │ int32       │ 2     │                                                          │
+│                                └─────────────┴───────┘                                                          │
+│ <span style="font-style: italic">                                                    number                                                    </span>  │
+│ ┏━━━━━━━━━━━━━━━━━━┳━━━━━━┳━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━┓  │
+│ ┃<span style="font-weight: bold"> column_name      </span>┃<span style="font-weight: bold"> NA   </span>┃<span style="font-weight: bold"> NA %   </span>┃<span style="font-weight: bold"> mean      </span>┃<span style="font-weight: bold"> sd        </span>┃<span style="font-weight: bold"> p0     </span>┃<span style="font-weight: bold"> p25    </span>┃<span style="font-weight: bold"> p75     </span>┃<span style="font-weight: bold"> p100      </span>┃<span style="font-weight: bold"> hist    </span>┃  │
+│ ┡━━━━━━━━━━━━━━━━━━╇━━━━━━╇━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━┩  │
+│ │ <span style="color: #af87ff; text-decoration-color: #af87ff">amt             </span> │ <span style="color: #008080; text-decoration-color: #008080">   0</span> │ <span style="color: #008080; text-decoration-color: #008080">     0</span> │ <span style="color: #008080; text-decoration-color: #008080">       71</span> │ <span style="color: #008080; text-decoration-color: #008080">      160</span> │ <span style="color: #008080; text-decoration-color: #008080">     1</span> │ <span style="color: #008080; text-decoration-color: #008080">   9.6</span> │ <span style="color: #008080; text-decoration-color: #008080">     83</span> │ <span style="color: #008080; text-decoration-color: #008080">    29000</span> │ <span style="color: #008000; text-decoration-color: #008000">   █   </span> │  │
+│ │ <span style="color: #af87ff; text-decoration-color: #af87ff">lat             </span> │ <span style="color: #008080; text-decoration-color: #008080">   0</span> │ <span style="color: #008080; text-decoration-color: #008080">     0</span> │ <span style="color: #008080; text-decoration-color: #008080">       40</span> │ <span style="color: #008080; text-decoration-color: #008080">      5.1</span> │ <span style="color: #008080; text-decoration-color: #008080">    20</span> │ <span style="color: #008080; text-decoration-color: #008080">    37</span> │ <span style="color: #008080; text-decoration-color: #008080">     42</span> │ <span style="color: #008080; text-decoration-color: #008080">       67</span> │ <span style="color: #008000; text-decoration-color: #008000">  ▂█▂  </span> │  │
+│ │ <span style="color: #af87ff; text-decoration-color: #af87ff">long            </span> │ <span style="color: #008080; text-decoration-color: #008080">   0</span> │ <span style="color: #008080; text-decoration-color: #008080">     0</span> │ <span style="color: #008080; text-decoration-color: #008080">     -110</span> │ <span style="color: #008080; text-decoration-color: #008080">       13</span> │ <span style="color: #008080; text-decoration-color: #008080">  -170</span> │ <span style="color: #008080; text-decoration-color: #008080">  -120</span> │ <span style="color: #008080; text-decoration-color: #008080">   -100</span> │ <span style="color: #008080; text-decoration-color: #008080">      -90</span> │ <span style="color: #008000; text-decoration-color: #008000">   █▆▅ </span> │  │
+│ │ <span style="color: #af87ff; text-decoration-color: #af87ff">city_pop        </span> │ <span style="color: #008080; text-decoration-color: #008080">   0</span> │ <span style="color: #008080; text-decoration-color: #008080">     0</span> │ <span style="color: #008080; text-decoration-color: #008080">   110000</span> │ <span style="color: #008080; text-decoration-color: #008080">   290000</span> │ <span style="color: #008080; text-decoration-color: #008080">    46</span> │ <span style="color: #008080; text-decoration-color: #008080">   470</span> │ <span style="color: #008080; text-decoration-color: #008080">  35000</span> │ <span style="color: #008080; text-decoration-color: #008080">  2400000</span> │ <span style="color: #008000; text-decoration-color: #008000">   █   </span> │  │
+│ │ <span style="color: #af87ff; text-decoration-color: #af87ff">merch_lat       </span> │ <span style="color: #008080; text-decoration-color: #008080">   0</span> │ <span style="color: #008080; text-decoration-color: #008080">     0</span> │ <span style="color: #008080; text-decoration-color: #008080">       40</span> │ <span style="color: #008080; text-decoration-color: #008080">      5.1</span> │ <span style="color: #008080; text-decoration-color: #008080">    19</span> │ <span style="color: #008080; text-decoration-color: #008080">    37</span> │ <span style="color: #008080; text-decoration-color: #008080">     42</span> │ <span style="color: #008080; text-decoration-color: #008080">       68</span> │ <span style="color: #008000; text-decoration-color: #008000">  ▂█▂  </span> │  │
+│ │ <span style="color: #af87ff; text-decoration-color: #af87ff">merch_long      </span> │ <span style="color: #008080; text-decoration-color: #008080">   0</span> │ <span style="color: #008080; text-decoration-color: #008080">     0</span> │ <span style="color: #008080; text-decoration-color: #008080">     -110</span> │ <span style="color: #008080; text-decoration-color: #008080">       13</span> │ <span style="color: #008080; text-decoration-color: #008080">  -170</span> │ <span style="color: #008080; text-decoration-color: #008080">  -120</span> │ <span style="color: #008080; text-decoration-color: #008080">   -100</span> │ <span style="color: #008080; text-decoration-color: #008080">      -89</span> │ <span style="color: #008000; text-decoration-color: #008000">   █▆▅ </span> │  │
+│ │ <span style="color: #af87ff; text-decoration-color: #af87ff">is_fraud        </span> │ <span style="color: #008080; text-decoration-color: #008080">   0</span> │ <span style="color: #008080; text-decoration-color: #008080">     0</span> │ <span style="color: #008080; text-decoration-color: #008080">   0.0052</span> │ <span style="color: #008080; text-decoration-color: #008080">    0.072</span> │ <span style="color: #008080; text-decoration-color: #008080">     0</span> │ <span style="color: #008080; text-decoration-color: #008080">     0</span> │ <span style="color: #008080; text-decoration-color: #008080">      0</span> │ <span style="color: #008080; text-decoration-color: #008080">        1</span> │ <span style="color: #008000; text-decoration-color: #008000">   █   </span> │  │
+│ └──────────────────┴──────┴────────┴───────────┴───────────┴────────┴────────┴─────────┴───────────┴─────────┘  │
+│ <span style="font-style: italic">                                                   datetime                                                   </span>  │
+│ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓  │
+│ ┃<span style="font-weight: bold"> column_name               </span>┃<span style="font-weight: bold"> NA  </span>┃<span style="font-weight: bold"> NA %   </span>┃<span style="font-weight: bold"> first                   </span>┃<span style="font-weight: bold"> last                    </span>┃<span style="font-weight: bold"> frequency   </span>┃  │
+│ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩  │
+│ │ <span style="color: #af87ff; text-decoration-color: #af87ff">trans_date_trans_time    </span> │ <span style="color: #008080; text-decoration-color: #008080">  0</span> │ <span style="color: #008080; text-decoration-color: #008080">     0</span> │ <span style="color: #800000; text-decoration-color: #800000">  2019-01-01 00:00:44  </span> │ <span style="color: #800000; text-decoration-color: #800000">  2020-12-31 23:59:24  </span> │ <span style="color: #af87ff; text-decoration-color: #af87ff">None       </span> │  │
+│ │ <span style="color: #af87ff; text-decoration-color: #af87ff">dob                      </span> │ <span style="color: #008080; text-decoration-color: #008080">  0</span> │ <span style="color: #008080; text-decoration-color: #008080">     0</span> │ <span style="color: #800000; text-decoration-color: #800000">      1927-09-09       </span> │ <span style="color: #800000; text-decoration-color: #800000">      2001-07-26       </span> │ <span style="color: #af87ff; text-decoration-color: #af87ff">None       </span> │  │
+│ └───────────────────────────┴─────┴────────┴─────────────────────────┴─────────────────────────┴─────────────┘  │
+│ <span style="font-style: italic">                                                    string                                                    </span>  │
+│ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┓  │
+│ ┃<span style="font-weight: bold"> column_name               </span>┃<span style="font-weight: bold"> NA      </span>┃<span style="font-weight: bold"> NA %       </span>┃<span style="font-weight: bold"> words per row                </span>┃<span style="font-weight: bold"> total words              </span>┃  │
+│ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━┩  │
+│ │ <span style="color: #af87ff; text-decoration-color: #af87ff">merchant                 </span> │ <span style="color: #008080; text-decoration-color: #008080">      0</span> │ <span style="color: #008080; text-decoration-color: #008080">         0</span> │ <span style="color: #008080; text-decoration-color: #008080">                         2.3</span> │ <span style="color: #008080; text-decoration-color: #008080">                  792934</span> │  │
+│ │ <span style="color: #af87ff; text-decoration-color: #af87ff">category                 </span> │ <span style="color: #008080; text-decoration-color: #008080">      0</span> │ <span style="color: #008080; text-decoration-color: #008080">         0</span> │ <span style="color: #008080; text-decoration-color: #008080">                         2.3</span> │ <span style="color: #008080; text-decoration-color: #008080">                  792934</span> │  │
+│ │ <span style="color: #af87ff; text-decoration-color: #af87ff">city                     </span> │ <span style="color: #008080; text-decoration-color: #008080">      0</span> │ <span style="color: #008080; text-decoration-color: #008080">         0</span> │ <span style="color: #008080; text-decoration-color: #008080">                         2.3</span> │ <span style="color: #008080; text-decoration-color: #008080">                  792934</span> │  │
+│ │ <span style="color: #af87ff; text-decoration-color: #af87ff">state                    </span> │ <span style="color: #008080; text-decoration-color: #008080">      0</span> │ <span style="color: #008080; text-decoration-color: #008080">         0</span> │ <span style="color: #008080; text-decoration-color: #008080">                         2.3</span> │ <span style="color: #008080; text-decoration-color: #008080">                  792934</span> │  │
+│ │ <span style="color: #af87ff; text-decoration-color: #af87ff">job                      </span> │ <span style="color: #008080; text-decoration-color: #008080">      0</span> │ <span style="color: #008080; text-decoration-color: #008080">         0</span> │ <span style="color: #008080; text-decoration-color: #008080">                         2.3</span> │ <span style="color: #008080; text-decoration-color: #008080">                  792934</span> │  │
+│ │ <span style="color: #af87ff; text-decoration-color: #af87ff">trans_num                </span> │ <span style="color: #008080; text-decoration-color: #008080">      0</span> │ <span style="color: #008080; text-decoration-color: #008080">         0</span> │ <span style="color: #008080; text-decoration-color: #008080">                         2.3</span> │ <span style="color: #008080; text-decoration-color: #008080">                  792934</span> │  │
+│ └───────────────────────────┴─────────┴────────────┴──────────────────────────────┴──────────────────────────┘  │
+╰────────────────────────────────────────────────────── End ──────────────────────────────────────────────────────╯
+</pre>
+</div>
+</div>
+<p>Everything looks okay, and I am lucky because there is no missing data. I will not need to do cleaning or imputation.</p>
+<p>I see that <code>is_fraud</code> is coded as 0 or 1, and the mean of this variable is 0.00525. The number of fraudulent transactions is very low, and we should use treatments for imbalanced classes when we get to the fitting/ modeling stage.</p>
+</section>
+<section id="do-all-variables-have-sensible-types" class="level1">
+<h1>5. Do all variables have sensible types?</h1>
+<p>I will look at each variable and decide whether to keep, transform, or drop it. This is a mixture of Exploratory Data Analysis and Feature Engineering, but I find it helpful to do some simple feature engineering as I start exploring the data. In this project, we have all data to begin with, so any transformations will be performed on the entire dataset.</p>
+<p>Questions to consider:</p>
+<ul>
+<li>Should strings be converted to factors?</li>
+<li>Is date-time data properly encoded?</li>
+<li>Is financial data encoded numerically?</li>
+<li>Is geographic data consistently rendered? (city/ state strings vs.&nbsp;lat/long numeric pairs)</li>
+</ul>
+<p>First, I grouped all my variables by type and examined each variable class by class. The dataset has the following types of variables:</p>
+<ol type="1">
+<li>Strings</li>
+<li>Geospatial Data</li>
+<li>Dates</li>
+<li>Date/Times</li>
+<li>Numerical</li>
+</ol>
+<p>As I go through the different classes of variables, I will provide information from the data dictionary about them.</p>
+<section id="looking-at-the-strings" class="level2">
+<h2 class="anchored" data-anchor-id="looking-at-the-strings">5.1. Looking at the strings</h2>
+<p>Strings are usually not a useful format for classification problems. The strings should be converted to factors, dropped, or otherwise transformed.</p>
+<p><strong><em>5.1.1. Strings to Factors</em></strong> (Code Block 6 - 8)</p>
+<ul>
+<li><code>category</code>, Category of Merchant</li>
+<li><code>job</code>, Job of Credit Card Holder</li>
+</ul>
+<p><strong><em>5.1.2. Strings as Strings</em></strong> (Code Block 9)</p>
+<ul>
+<li><code>merchant</code>, Merchant Name</li>
+<li><code>trans_num</code>, Transaction Number</li>
+</ul>
+<p>I’m not going to retain these, as they are either unlikely to have predictive power (<code>trans_num</code>) or are highly correlated with other predictors (<code>merchant</code> with <code>merch_lat</code>/<code>merch_long</code>.)</p>
+<p><strong><em>5.2. Strings to Geospatial Data</em></strong> (Code Block 13)</p>
+<p>We have plenty of geospatial data as lat/long pairs, so I want to convert city/state to lat/long so I can compare to the other geospatial variables. This will also make it easier to compute new variables like the distance the transaction is from the home location. I will transform and explore this when I handle the other geospatial data.</p>
+<ul>
+<li><code>city</code>, City of Credit Card Holder</li>
+<li><code>state</code>, State of Credit Card Holder</li>
+</ul>
+<p><strong>Things to consider as we walk through the data:</strong></p>
+<ul>
+<li>Do we have typos that lead to duplicate entries : VA/ Va. / Virginia?</li>
+<li>Do we have excessive # of categories? Do we want to combine some?</li>
+<li>Should they be ordered?</li>
+</ul>
+<section id="exploring-the-factors-how-is-the-compactness-of-categories" class="level3">
+<h3 class="anchored" data-anchor-id="exploring-the-factors-how-is-the-compactness-of-categories">5.1.1. Exploring the factors: how is the compactness of categories?</h3>
+<p>The predictors <code>category</code> and <code>job</code> are transformed into factors.</p>
+<div class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>fraud[<span class="st">"category"</span>] <span class="op">=</span> fraud[<span class="st">"category"</span>].astype(<span class="st">"category"</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>fraud[<span class="st">"job"</span>] <span class="op">=</span> fraud[<span class="st">"job"</span>].astype(<span class="st">"category"</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>fraud[<span class="st">"category"</span>].dtype</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>fraud[<span class="st">"job"</span>].dtype</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="convert-strings-to-factors" class="cell-output cell-output-display" data-execution_count="6">
+<pre><code>CategoricalDtype(categories=['Accountant, chartered', 'Administrator, education',
+                  'Administrator, local government',
+                  'Advertising account planner', 'Aeronautical engineer',
+                  'Agricultural consultant', 'Airline pilot', 'Architect',
+                  'Architectural technologist',
+                  'Armed forces training and education officer',
+                  ...
+                  'Therapist, art', 'Therapist, horticultural',
+                  'Therapist, music', 'Therapist, occupational',
+                  'Tourist information centre manager', 'Town planner',
+                  'Video editor', 'Water engineer', 'Web designer',
+                  'Wellsite geologist'],
+, ordered=False)</code></pre>
+</div>
+</div>
+<p>From the skim output, I see that <code>category</code> has 14 unique values, and <code>job</code> has 163 unique values. The dataset is quite large, with 339,607 records, so these variables don’t have an excessive number of levels at first glance. However, it is worth seeing if I can compact the levels to a smaller number.</p>
+<section id="why-do-we-care-about-the-number-of-categories-and-whether-they-are-excessive" class="level4">
+<h4 class="anchored" data-anchor-id="why-do-we-care-about-the-number-of-categories-and-whether-they-are-excessive">Why do we care about the number of categories and whether they are “excessive”?</h4>
+<p>Consider the extreme case where a dataset had categories that only contained one record each. There is simply insufficient data to make correct predictions using category as a predictor on new data with that category label. Additionally, if your modeling uses dummy variables, having an extremely large number of categories will lead to the production of a huge number of predictors, which can slow down the fitting. This is fine if all the predictors are useful, but if they aren’t useful (as in the case of having only one record for a category), trimming them will improve the speed and quality of the data fitting.</p>
+<p>If I had subject matter expertise, I could manually combine categories. For example, in this dataset, the three largest categories in <code>job</code> are surveying-related and perhaps could be combined. If you don’t have subject matter expertise, or if performing this task would be too labor intensive, then you can use cutoffs based on the amount of data in a category. If the majority of the data exists in only a few categories, then it might be reasonable to keep those categories and lump everything else in an “other” category or perhaps even drop the data points in smaller categories.</p>
+<p>Another way to evaluate the compactness is to <a href="https://stackoverflow.com/questions/15844919/cumulative-plot-%20using-ggplot2">make a cumulative plot</a>. This looks at the proportion of data that is described as you add categories. I’m using the <a href="https://wilkelab.org/cowplot/index.html">cowplot package</a> to make multipanel figures. I want to look at both factors at once; this is fine for exploratory data analysis, but I wouldn’t recommend it for a report or presentation, since there is no connection between the two variables.</p>
+<div class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>table_3b_data <span class="op">=</span> fraud.value_counts(<span class="st">"category"</span>, sort <span class="op">=</span> <span class="va">True</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>table_3b_data</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co">#plt.step(np.concatenate([table_3b_data, table_3b_data[[-1]]]),</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co">#         np.arange(table_3b_data.size+1))</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co">#plt.show()</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co">#plt.clf()</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="co">#sns.ecdfplot(fraud, x = "category" )</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="co">#plt.show()</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="compactness" class="cell-output cell-output-display" data-execution_count="7">
+<pre><code>category
+gas_transport     35089
+grocery_pos       32732
+home              32516
+shopping_pos      30329
+kids_pets         29704
+shopping_net      26379
+personal_care     24406
+entertainment     24222
+food_dining       23038
+health_fitness    22593
+misc_pos          20024
+misc_net          16898
+grocery_net       11355
+travel            10322
+Name: count, dtype: int64</code></pre>
+</div>
+</div>
+<p>If you look at Figure 1A, roughly 75-80 categories have to be included to capture 80% of the data. For Figure 1B, roughly ten categories have to be included. Ideally, you’d like a very steep curve initially (where a “small number” of categories cover the “majority” of the data) and then a long, shallow tail approaching 100% that corresponds to the data to be binned in “other” or dropped. There aren’t hard and fast rules on making these decisions. I decided to use 80% as my threshold. Both of these curves look relatively shallow to me, so I decided not to do any binning, grouping, or dropping of levels.</p>
+<p>I decided to look at all the categories of transactions just to see which ones were the most common.</p>
+<div id="category-levels" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">#plt.clf()</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co">#sns.barplot( x = "category", y = "count", data = table_3b_data)</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co">#plt.show()</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Gas/transport was the most common category, and grocery was the second most common, both of which make sense. The least common category was travel. Nothing seemed unusual in the ranking.</p>
+</section>
+</section>
+<section id="looking-at-our-character-strings" class="level3">
+<h3 class="anchored" data-anchor-id="looking-at-our-character-strings">5.1.2. Looking at our character strings</h3>
+<p>Merchant name (<code>merchant</code>) and transaction number(<code>trans_num</code>) are both strings. Transaction number should not influence fraud rate as it is a number assigned to the transaction when processed. I will drop it from our dataset. Merchant name could be correlated with fraud, for example, if a company’s employee was involved. However, this data is also represented by the location and category. If a location/category is found to have higher levels of fraud, then a more detailed examination of those transactions can be performed, including the merchant name. Here, I also remove it from the dataset.</p>
+<div id="removing-merchant-transnum" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Code Block 9: Removing Character/ String Variables</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>fraud <span class="op">=</span> fraud.drop(columns <span class="op">=</span> [<span class="st">"merchant"</span>,<span class="st">"trans_num"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="looking-at-the-geographic-data" class="level2">
+<h2 class="anchored" data-anchor-id="looking-at-the-geographic-data">5.2. Looking at the geographic data</h2>
+<p>This data is coded as numeric (latitude and longitude) or character (city/state), but we can recognize it as geographic data and treat it appropriately.</p>
+<p>First, there are two sets of geographic data related to the merchant. The location of the merchant and where the transaction occurred. I create scatter plots of latitude and longitude separately, because I want to check the correlation between the two sources of data (merchant and transaction). I create a shared legend following the article <a href="https://wilkelab.org/cowplot/articles/shared_legends.html">here</a>.</p>
+<div id="transaction-merchant-coords" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Code Block 10: Comparing Merchant and Transaction Locations</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate correlations</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>fraud.corr(numeric_only<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="co">#cor_long = fraud.corr("long", "merch_long")</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co">#cor_lat</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="co">#cor_long</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>plt.clf()</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>sns.pairplot(fraud, <span class="bu">vars</span> <span class="op">=</span> [<span class="st">"long"</span>, <span class="st">"merch_long"</span>])</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>plt.clf()</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>sns.pairplot(fraud, <span class="bu">vars</span> <span class="op">=</span> [<span class="st">"lat"</span>, <span class="st">"merch_lat"</span>])</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="transaction-merchant-coords-1" class="cell-output cell-output-display">
+<pre><code>&lt;Figure size 672x480 with 0 Axes&gt;</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="python_fraud_testing%20quarto_files/figure-html/transaction-merchant-coords-output-2.png" id="transaction-merchant-coords-2" width="475" height="474"></p>
+</div>
+<div id="transaction-merchant-coords-3" class="cell-output cell-output-display">
+<pre><code>&lt;Figure size 672x480 with 0 Axes&gt;</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<p><img src="python_fraud_testing%20quarto_files/figure-html/transaction-merchant-coords-output-4.png" id="transaction-merchant-coords-4" width="475" height="474"></p>
+</div>
+</div>
+<p>These two sets of data are highly correlated (for latitude = <code>r cor_lat</code> and for longitude = <code>r cor_long</code>) and thus are redundant. So I remove <code>merch_lat</code> and <code>merch_long</code> from the dataset.</p>
+<div id="removing-merchant-coords" class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Code Block 11: Removing merch_lat and merch_long</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>fraud <span class="op">=</span> fraud.drop(columns <span class="op">=</span> [<span class="st">"merch_lat"</span>,<span class="st">"merch_long"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Next, I will look and see if some locations are more prone to fraud.</p>
+<div id="fraud-by-location" class="cell" data-execution_count="12">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Code Block 12: Looking at Fraud by Location</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>It looks like there are some locations which only have fraudulent transactions.</p>
+<p>Next, I’m going to convert city/state into latitude and longitude using the <a href="https://jessecambon.github.io/tidygeocoder/reference/geo.html">tidygeocoder package</a>. Also included code to save this output and then re-import it. You likely do not want to be pulling the data from the internet every time you run the code, so this gives you the option to work from a local copy. For many services, it is against terms of service to repeatedly make the same calls rather than working from a local version. I did find that I could originally pull all data from ‘osm’, but while double checking this code, I found that the service is now imposing some rate limit and denies some requests, leading to some NA entries. So do check your results.</p>
+<div id="city-state-to-coords" class="cell" data-execution_count="13">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># # Reimport the data and load it</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="co"># home_coords &lt;-</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   read_csv('datacamp_workspace/downloaded_coords.csv', show_col_types = FALSE)</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="co"># # imported home coords has an extra set of quotation marks</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="co"># home_coords &lt;- home_coords %&gt;%</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="co">#   mutate(address = str_replace_all(address, "\"", "")) %&gt;%</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="co">#   rename(lat_home = lat, long_home = long)</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="co"># # use a left join on fraud and home_coords to assign the coord to every address in fraud</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a><span class="co"># fraud &lt;- fraud %&gt;%</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a><span class="co">#   left_join(home_coords, by = "address")</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now I’m going to calculate the distance between the card holder’s home and the location of the transaction. I think distance might be a feature that is related to fraud. I followed the tutorial <a href="https://www.geeksforgeeks.org/program-distance-two-points-earth/amp/">here</a> for calculating distance</p>
+<div class="cell" data-execution_count="14">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Code Block 14: Distance Between Home and Transaction</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co"># I believe this assuming a spherical Earth</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="co"># convert to radians</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="co"># fraud &lt;- fraud %&gt;%</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="co">#   mutate(</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="co">#     lat1_radians = lat_home / 57.29577951,</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="co">#     lat2_radians = lat_trans / 57.29577951,</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="co">#     long1_radians = long_home / 57.29577951,</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="co">#     long2_radians = long_trans / 57.29577951</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a><span class="co">#   )</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a><span class="co"># # calculating distance</span></span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a><span class="co"># fraud &lt;-</span></span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a><span class="co">#   fraud %&gt;% mutate(distance_miles = 3963.0 * acos((sin(lat1_radians) * sin(lat2_radians)) + cos(lat1_radians) * cos(lat2_radians) * cos(long2_radians - long1_radians)</span></span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a><span class="co">#   ))</span></span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a><span class="co"># # calculating the correlation</span></span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a><span class="co"># fraud_distance &lt;- round(cor(fraud$distance_miles, fraud$is_fraud), 3) </span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Despite my assumption that distance would be correlated with fraud, the correlation value is quite low, <code>r fraud_distance</code>.</p>
+<p>I’m going to visualize it anyway.</p>
+<div id="distance-and-fraud" class="cell" data-execution_count="15">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Code Block 15: Distance from Home and Fraud</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="co"># ggplot(fraud, aes(distance_miles, is_fraud , fill = factor(is_fraud))) +</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   geom_point(</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="co">#     alpha = 1,</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="co">#     shape = 21,</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="co">#     colour = "black",</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="co">#     size = 5,</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="co">#     position = "jitter"</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="co">#   ) +</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="co">#   scale_fill_viridis(</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a><span class="co">#     discrete = TRUE,</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a><span class="co">#     labels = c('Not Fraud', 'Fraud'),</span></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a><span class="co">#     name = ""</span></span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a><span class="co">#   ) +</span></span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a><span class="co">#   ggtitle("Figure 5: How far from home does fraud occur?") +</span></span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a><span class="co">#   xlab("Distance from Home (miles)") +</span></span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a><span class="co">#   ylab("Is Fraud?") </span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Some distances only have fraudulent transactions. This might be related to the locations that are only fraud, Figure 4.</p>
+<p>This new feature <code>distances_miles</code> is retained, and the original variables (<code>city</code>, <code>state</code>) and the intermediate variables (address, variables used to calculate distance) are removed in Code Block 16.</p>
+<div class="cell" data-execution_count="16">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># #| label: distance-and-fraud-viz</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="co"># # Code Block 16: Remove Extraneous/Temp Variables</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="co"># # created to calculate distance</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co"># fraud &lt;- fraud %&gt;%</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="co">#   select(-lat1_radians,-lat2_radians,-long1_radians,-long2_radians)</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="co"># #remove city and state and address, replaced by lat/long</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="co"># fraud &lt;- fraud %&gt;%</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="co">#   select(-city, -state, -address)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="drop-all-geographic-vars" class="cell" data-execution_count="17">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>fraud <span class="op">=</span> fraud.drop(columns <span class="op">=</span> [<span class="st">"lat"</span>, <span class="st">"long"</span>, <span class="st">"city"</span>, <span class="st">"state"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="looking-at-the-dates" class="level2">
+<h2 class="anchored" data-anchor-id="looking-at-the-dates">5.3. Looking at the dates</h2>
+<p><strong>Date</strong></p>
+<p><code>dob</code>, Date of Birth of Credit Card Holder</p>
+<p>Questions:</p>
+<ul>
+<li><p>What is the date range, and does it make sense?</p></li>
+<li><p>Do we have improbably old or young people?</p></li>
+<li><p>Do we have historic or futuristic transaction dates?</p></li>
+</ul>
+<p>I calculate the <code>age</code> from the <code>dob</code> and visualize them both.</p>
+<div id="dob-viz" class="cell" data-execution_count="18">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Code Block 17: Looking at dob</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="co"># sns.histplot(x = "dob", data = fraud, bins = 20)</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="co"># plt.show()</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="co"># fraud["age"] = fraud["dob"]- fraud["trans_date_trans_time"].min()</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="co"># plt.clf()</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a><span class="co"># sns.histplot(x = "age", data = fraud, bins = 20)</span></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a><span class="co"># plt.show()</span></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">#mutate (age = trunc((dob %--% today()) / years(1))) #if you wanted to calculate age relative to today</span></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a><span class="co">#  mutate(age = trunc((</span></span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a> <span class="co">#   dob %--% min(fraud$trans_date_trans_time)</span></span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a><span class="co">#  ) / years(1)))</span></span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a><span class="co">#summary(fraud$age) #if you wanted a printed summary stats</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-execution_count="19">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co">#first transaction</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>start_date <span class="op">=</span> fraud[<span class="st">"trans_date_trans_time"</span>].<span class="bu">min</span>()</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>start_date</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="19">
+<pre><code>Timestamp('2019-01-01 00:00:44')</code></pre>
+</div>
+</div>
+<div class="cell" data-execution_count="20">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> datetime</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="co">#from dateutil.relativedelta import relativedelta</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="co">#difference_in_years = relativedelta(fraud["dob"], start_date).years</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="co">#temp = abs(fraud["dob"]- start_date)</span></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="co">#temp.dtype</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>fraud[<span class="st">"age"</span>] <span class="op">=</span> np.floor((start_date <span class="op">-</span> fraud[<span class="st">'dob'</span>])<span class="op">/</span>np.timedelta64(<span class="dv">1</span>,<span class="st">'Y'</span>))</span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>plt.clf()</span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>sns.histplot(x <span class="op">=</span> <span class="st">"age"</span>, data <span class="op">=</span> fraud, bins <span class="op">=</span> <span class="dv">10</span>)</span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a><span class="co"># = datetime.timedelta(fraud["dob"], start_date)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="python_fraud_testing%20quarto_files/figure-html/cell-21-output-1.png" width="610" height="429"></p>
+</div>
+</div>
+<p>The ages seem reasonable (calculated relative to the earliest date of transactions). There are a few thousand 17-year-olds, which is too young to have their own credit card, but it is plausible that they would be an authorized user on their parents’ card. <code>age</code> seems a more reasonable variable than <code>dob</code>, so <code>dob</code> is also dropped from the dataset. For example, scammers might be more likely to target 90-year-olds. The age is the feature that leads to them being targeted, not the birth year. The birth year is related to age through the current date- in 10 years, a new cohort of birth years would be targeted if age is the important feature. So the <code>age</code> feature is more robust to passing time than <code>dob</code>.</p>
+<div class="cell" data-execution_count="21">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Code Block 18: Removing dob</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>fraud <span class="op">=</span> fraud.drop(columns <span class="op">=</span> [<span class="st">"dob"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="looking-at-the-date-times" class="level2">
+<h2 class="anchored" data-anchor-id="looking-at-the-date-times">5.4. Looking at the date-times</h2>
+<p><strong>date-time</strong></p>
+<p><code>trans_date_trans_time</code>, Transaction DateTime</p>
+<p><strong>Questions</strong></p>
+<p>Would processing the date-times yield more useful predictors?</p>
+<p>First, I want to look at variation in the number of transactions with date-time. I chose to use a histogram with bins corresponding to one month widths.</p>
+<div class="cell" data-execution_count="22">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> arrow</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Trying out arrow</p>
+<div class="cell" data-execution_count="23">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>plt.clf()</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>sns.histplot(x<span class="op">=</span> <span class="st">"trans_date_trans_time"</span>, data <span class="op">=</span> fraud, bins <span class="op">=</span> <span class="dv">24</span>)</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="python_fraud_testing%20quarto_files/figure-html/cell-24-output-1.png" width="614" height="429"></p>
+</div>
+</div>
+<p>Next, I will break the transaction date-time into day of the week, hour, and the date only. I’m doing this here with <a href="https://lubridate.tidyverse.org/">lubridate functions</a>, but I could also do this in the model building section, when I create recipes by using <a href="https://recipes.tidymodels.org/reference/step_date.html">step_date()</a>. I will also graph transactions by day of the week.</p>
+<div id="day-transactions" class="cell" data-execution_count="24">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Code Block 20: </span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="co">#fraud["day"] = datetime.weekday(fraud["trans_date_trans_time"])</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="co">#hours = fraud["trans_date_trans_time"].hour</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>fraud[<span class="st">"day"</span>] <span class="op">=</span> fraud[<span class="st">"trans_date_trans_time"</span>].dt.weekday</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>fraud[<span class="st">"hour"</span>] <span class="op">=</span> fraud[<span class="st">"trans_date_trans_time"</span>].dt.hour</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>plt.clf()</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>sns.histplot(x<span class="op">=</span> <span class="st">"day"</span>, data<span class="op">=</span> fraud, bins <span class="op">=</span> <span class="dv">7</span>)</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>fraud.value_counts(<span class="st">"day"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="python_fraud_testing%20quarto_files/figure-html/day-transactions-output-1.png" id="day-transactions-1" width="610" height="430"></p>
+</div>
+<div id="day-transactions-2" class="cell-output cell-output-display" data-execution_count="24">
+<pre><code>day
+0    67396
+6    62178
+1    50051
+5    47884
+4    39818
+3    38277
+2    34003
+Name: count, dtype: int64</code></pre>
+</div>
+</div>
+<p>Monday has the highest number of transactions; this could be due to businesses processing orders that came in over the weekend. By default, pandas codes the day of the week as a number where 0 means Monday, 6 means Sunday.</p>
+<p>Now, I look at what time of day do most transactions occur?</p>
+<div class="cell" data-execution_count="25">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Code Block 21: What time do transactions occur</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>plt.clf()</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>sns.histplot(x <span class="op">=</span> <span class="st">"hour"</span>, data <span class="op">=</span> fraud, bins <span class="op">=</span> <span class="dv">24</span>)</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="python_fraud_testing%20quarto_files/figure-html/hour-transactions-graph-output-1.png" id="hour-transactions-graph" width="610" height="429"></p>
+</div>
+</div>
+<p>This data honestly looks funny to me. I might expect that most transactions would occur during normal business hours (~9-5) or more occur during lunch or after work, but what we see is a lower number of transactions from midnight to ~ 2 pm and then a higher number of transactions from 2 pm until midnight. The odd pattern could be a sign that something is wrong with the data (perhaps timezones aren’t being encoded properly?), or it could be simply a lack of subject matter knowledge (for example, transactions are pre-authorized at the time of sale and processed later, and the transaction time is the processing time, not the sale time.) Of course, this is also a synthetic dataset, so this pattern may be simply the result of user input choices when the set was generated. If this were a real dataset, I’d chase this down.</p>
+<div id="remove-transdatetranstime" class="cell" data-execution_count="26">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Code Block 23:</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="co">#removing the original variable and keeping the component variables.</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>fraud <span class="op">=</span> fraud.drop(columns <span class="op">=</span>[<span class="st">"trans_date_trans_time"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="looking-at-the-numerical-variables" class="level2">
+<h2 class="anchored" data-anchor-id="looking-at-the-numerical-variables">5.5. Looking at the numerical variables</h2>
+<p><strong>Numerical</strong></p>
+<p><code>amt</code>, transaction amount</p>
+<p><strong>Questions</strong></p>
+<p>Would transforming this data produce a more normal distribution?</p>
+<p>Generally, more normal or at least more symmetric data tends to be fitted better, especially when using model-fitting algorithms that arise from statistics rather than pure machine learning.</p>
+<p>I compare the original data with the log-transformed data.</p>
+<div class="cell" data-execution_count="27">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>fraud[<span class="st">"log_amt"</span>] <span class="op">=</span> np.log(fraud[<span class="st">"amt"</span>])</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>plt.clf()</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>sns.histplot(x<span class="op">=</span> <span class="st">"amt"</span>, data <span class="op">=</span> fraud, bins <span class="op">=</span> <span class="dv">50</span>)</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="python_fraud_testing%20quarto_files/figure-html/amt-log-amt-graph-output-1.png" id="amt-log-amt-graph" width="633" height="431"></p>
+</div>
+</div>
+<p>now the other one.</p>
+<div class="cell" data-execution_count="28">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>plt.clf()</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>sns.histplot(x<span class="op">=</span> <span class="st">"log_amt"</span>, data <span class="op">=</span> fraud, bins <span class="op">=</span> <span class="dv">50</span>)</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="python_fraud_testing%20quarto_files/figure-html/cell-29-output-1.png" width="610" height="429"></p>
+</div>
+</div>
+<p>The transformed data is more symmetric so that the transformed variable will be retained.</p>
+<div id="log-amt-feature" class="cell" data-execution_count="29">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Code Block 25:</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>fraud <span class="op">=</span> fraud.drop(columns <span class="op">=</span> [<span class="st">"amt"</span>, <span class="st">"job"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>I do a final clean-up of variables next. I remove some variables that I don’t think will impact fraud- the population of the home city and the location of the home. I don’t think the home should have an impact on fraud; it is where the card is used, not where it is billed, that should matter. I suppose you could have a neighborhood where all the mail was being stolen, and cards were compromised that way, but I think most cards get compromised at the point of sale.</p>
+<p>I also removed the date. The date itself is unlikely to be related to fraud. It is possible that special dates are correlated with fraud, like a holiday or a big sports match. Engineering a holiday feature could be a future improvement.</p>
+<p>There is a possibility that job type could have an impact on fraud; for example, a trucker might be more likely to have his/her card stolen just because they are always on the road and visiting a wide variety of places where they would use the card. Or this could come in as an interaction term with distance; distance from home and the occupation trucker might have no correlation, but the distance from home and the occupation teacher might have because it would be a more unusual event for that <code>job</code>. However, some model fitting fails to converge when <code>job</code> is included, and it takes a long time for the models that it does work for. So I remove it too.</p>
+<pre><code></code></pre>
+</section>
+</section>
+<section id="final-preparation-for-modeling" class="level1">
+<h1>6. Final preparation for modeling</h1>
+<p>Next, I plot the correlation plot for the dataset. Highly correlated variables can cause problems for some fitting algorithms, again, especially for those coming from statistics. It also gives you a bit of a feel for what might come out of the model fitting. This is also a chance to do one last fact-check. For example, <code>category</code> and <code>amt</code> are reasonably correlated. The sign isn’t particularly important in this case since <code>category</code> is arbitrarily ordered.</p>
+<p>I like the corrplot package for making correlation plots. I think this package produces very nice visualizations. I did find that the title sometimes gets cut off and I found the solution was to add some margin as explained <a href="https://stefaneng.github.io/corrplot-title-cut-off/">here</a>.</p>
+<div class="cell" data-execution_count="30">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Code Block 27: examining correlation between variables </span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>plt.clf()</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>sns.heatmap(fraud.corr(numeric_only<span class="op">=</span><span class="va">True</span>), cmap<span class="op">=</span><span class="st">"YlGnBu"</span>, annot<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="python_fraud_testing%20quarto_files/figure-html/correlation-graph-output-1.png" id="correlation-graph" width="533" height="416"></p>
+</div>
+</div>
+<p>And take one last look at the data and make sure I have the variables I expect.</p>
+<div id="final-check-of-data" class="cell" data-execution_count="31">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Code Block 29: Viewing Final Fraud Dataset</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>fraud.info()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>&lt;class 'pandas.core.frame.DataFrame'&gt;
+RangeIndex: 339607 entries, 0 to 339606
+Data columns (total 7 columns):
+ #   Column    Non-Null Count   Dtype   
+---  ------    --------------   -----   
+ 0   category  339607 non-null  category
+ 1   city_pop  339607 non-null  int64   
+ 2   is_fraud  339607 non-null  int64   
+ 3   age       339607 non-null  float64 
+ 4   day       339607 non-null  int32   
+ 5   hour      339607 non-null  int32   
+ 6   log_amt   339607 non-null  float64 
+dtypes: category(1), float64(2), int32(2), int64(2)
+memory usage: 13.3 MB</code></pre>
+</div>
+</div>
+</section>
+<section id="section" class="level1">
+<h1></h1>
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{e. sinks2023,
+  author = {E. Sinks, Louise},
+  title = {Credit {Card} {Fraud:} {Python} {Tutorial}},
+  date = {2023-07-26},
+  url = {https://lsinks.github.io/posts/},
+  langid = {en}
+}
+</code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-e. sinks2023" class="csl-entry quarto-appendix-citeas" role="listitem">
+E. Sinks, Louise. 2023. <span>“Credit Card Fraud: Python
+Tutorial.”</span> July 26, 2023. <a href="https://lsinks.github.io/posts/">https://lsinks.github.io/posts/</a>.
+</div></div></section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
