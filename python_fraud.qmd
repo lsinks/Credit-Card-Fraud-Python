@@ -170,7 +170,7 @@ Another way to evaluate the compactness is to [make a cumulative plot](https://s
 
 
 plt.clf()
-fig, ax = sns.ecdfplot(data = fraud, x = "category", stat = 'proportion')
+fig, ax = sns.ecdfplot(data = fraud, x = "category", stat = 'proportion', color = "darkcyan")
 ax.set_title("Exploring Categorical Variables")
 plt.xticks(rotation=45)
 
@@ -184,7 +184,7 @@ I decided to look at all the categories of transactions just to see which ones w
 ```{python}
 #| label: category-levels
 
-fraud.value_counts("category", sort = True).plot(kind = "bar")
+fraud.value_counts("category", sort = True).plot(kind = "bar", color = "darkcyan")
 plt.xticks(rotation=45)
 plt.show()
 ```
@@ -424,6 +424,109 @@ fraud.info()
 
 ```
 
+# Just a simple Log Reg with no hyper
+
+```{python}
+#fraud_dummies = pd.get_dummies(fraud, drop_first= True)
+#X = fraud_dummies.drop("is_fraud", axis = 1) # Features
+#y = fraud_dummies["is_fraud"] # Target variable
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler,LabelBinarizer, OneHotEncoder
+from sklearn.pipeline import Pipeline
+
+X = fraud.drop("is_fraud", axis = 1) # Features
+y = fraud["is_fraud"] # Target variable
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, stratify = y, test_size=0.25, random_state=8675309 )
+
+
+numeric_features=list(X.select_dtypes('number').columns)
+categorical_features=list(X.select_dtypes('category').columns)
+
+numeric_transformer = Pipeline(steps = ["scaler", StandardScaler()])
+categorical_transformer = Pipeline(steps = ["onehot", OneHotEncoder()])
+
+
+preprocessor = ColumnTransformer(transformers = [("num", numeric_transformer, numeric_features), ("cat", categorical_transformer, categorical_features)])
+
+
+
+```
+
+Pre-process
+
+```{python}
+
+
+rf = Pipeline(steps = [("preprocessor", preprocessor),
+     ("classifier", RandomForestClassifier())])
+
+rf
+
+```
+
+```{python}
+import numpy as np
+
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline, make_pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
+numeric_preprocessor = Pipeline(
+    steps=[
+        ("imputation_mean", SimpleImputer(missing_values=np.nan, strategy="mean")),
+        ("scaler", StandardScaler()),
+    ]
+)
+
+categorical_preprocessor = Pipeline(
+    steps=[
+        (
+            "imputation_constant",
+            SimpleImputer(fill_value="missing", strategy="constant"),
+        ),
+        ("onehot", OneHotEncoder(handle_unknown="ignore")),
+    ]
+)
+
+preprocessor = ColumnTransformer(
+    [
+        ("categorical", categorical_preprocessor, categorical_features),
+        ("numerical", numeric_preprocessor, numeric_features),
+    ]
+)
+
+ 
+pipe = make_pipeline(preprocessor, RandomForestClassifier())
+#pipe = make_pipeline(preprocessor, LogisticRegression(max_iter=500))
+pipe  # click on the diagram below to see the details of each step
+```
+
+This code is copeid from scikitlearn itself https://scikit-learn.org/stable/auto_examples/miscellaneous/plot_pipeline_display.html#displaying-a-pipeline-chaining-multiple-preprocessing-steps-classifier
+
+now the split
+
+```{python}
+pipe.fit(X_train, y_train)  # apply scaling on training data
+y_pred = pipe.predict(X_test)
+
+from sklearn.metrics import balanced_accuracy_score
+bal_acc=balanced_accuracy_score(y_test,y_pred, adjusted=True )
+```
+
+now the fit
+
+```{python}
+
+```
+
 # 7. Finding a high performing model
 
 (https://towardsdatascience.com/quickly-test-multiple-models-a98477476f0)
@@ -455,9 +558,9 @@ This ends up being 4 x 4 different fits, and keeping track of all the combinatio
 TOOK CATEgory out and need to put it back later
 
 ```{python}
-fraud_dummies = pd.get_dummies(fraud, columns = ["category"])
 
-new_cols = fraud_dummies.columns[~fraud_dummies.columns.isin(fraud.columns)]
+
+#new_cols = fraud_dummies.columns[~fraud_dummies.columns.isin(fraud.columns)]
 
 
 ```
@@ -465,7 +568,7 @@ new_cols = fraud_dummies.columns[~fraud_dummies.columns.isin(fraud.columns)]
 New cols has the info, but I don't know how to join it with the columns.
 
 ```{python}
-feature_cols = ["age", "day", "hour", "log_amt", "category_entertainment", 'category_food_dining',
+#feature_cols = ["age", "day", "hour", "log_amt", "category_entertainment", 'category_food_dining',
        'category_gas_transport', 'category_grocery_net',
        'category_grocery_pos', 'category_health_fitness', 'category_home',
        'category_kids_pets', 'category_misc_net', 'category_misc_pos',
@@ -487,8 +590,8 @@ fraud_small =fraud_dummies.groupby('is_fraud', group_keys=False).apply(lambda x:
 #X = fraud_small[feature_cols] # Features
 #y = fraud_small["is_fraud"] # Target variable
 
-X = fraud_dummies[feature_cols] # Features
-y = fraud_dummies["is_fraud"] # Target variable
+#X = fraud_dummies.drop("is_fraud", axis = 1) # Features
+#y = fraud_dummies["is_fraud"] # Target variable
 
 ```
 
@@ -558,44 +661,44 @@ how did we do?
 
 ```{python}
 #| label: creating-recipes
-
-
-def run_exps(X_train: pd.DataFrame , y_train: pd.DataFrame, X_test: pd.DataFrame, y_test: pd.DataFrame) -> pd.DataFrame:
-    '''
-    Lightweight script to test many models and find winners
-:param X_train: training split
-    :param y_train: training target vector
-    :param X_test: test split
-    :param y_test: test target vector
-    :return: DataFrame of predictions
-    '''
-    
-    dfs = []
-models = [
-          ('LogReg', LogisticRegression()), 
-          ('RF', RandomForestClassifier()),
-          ('KNN', KNeighborsClassifier()),
-          ('SVM', SVC()), 
-          ('GNB', GaussianNB()),
-        ]
-results = []
-    names = []
-    scoring = ['accuracy', 'precision_weighted', 'recall_weighted', 'f1_weighted', 'roc_auc']
-    target_names = ['malignant', 'benign']
-for name, model in models:
-        kfold = model_selection.KFold(n_splits=5, shuffle=True, random_state=90210)
-        cv_results = model_selection.cross_validate(model, X_train, y_train, cv=kfold, scoring=scoring)
-        clf = model.fit(X_train, y_train)
-        y_pred = clf.predict(X_test)
-        print(name)
-        print(classification_report(y_test, y_pred, target_names=target_names))
-results.append(cv_results)
-        names.append(name)
-this_df = pd.DataFrame(cv_results)
-        this_df['model'] = name
-        dfs.append(this_df)
-final = pd.concat(dfs, ignore_index=True)
-return final
+# 
+# 
+# def run_exps(X_train: pd.DataFrame , y_train: pd.DataFrame, X_test: pd.DataFrame, y_test: pd.DataFrame) -> pd.DataFrame:
+#     '''
+#     Lightweight script to test many models and find winners
+# :param X_train: training split
+#     :param y_train: training target vector
+#     :param X_test: test split
+#     :param y_test: test target vector
+#     :return: DataFrame of predictions
+#     '''
+#     
+#     dfs = []
+# models = [
+#           ('LogReg', LogisticRegression()), 
+#           ('RF', RandomForestClassifier()),
+#           ('KNN', KNeighborsClassifier()),
+#           ('SVM', SVC()), 
+#           ('GNB', GaussianNB()),
+#         ]
+# results = []
+#     names = []
+#     scoring = ['accuracy', 'precision_weighted', 'recall_weighted', 'f1_weighted', 'roc_auc']
+#     target_names = ['malignant', 'benign']
+# for name, model in models:
+#         kfold = model_selection.KFold(n_splits=5, shuffle=True, random_state=90210)
+#         cv_results = model_selection.cross_validate(model, X_train, y_train, cv=kfold, scoring=scoring)
+#         clf = model.fit(X_train, y_train)
+#         y_pred = clf.predict(X_test)
+#         print(name)
+#         print(classification_report(y_test, y_pred, target_names=target_names))
+# results.append(cv_results)
+#         names.append(name)
+# this_df = pd.DataFrame(cv_results)
+#         this_df['model'] = name
+#         dfs.append(this_df)
+# final = pd.concat(dfs, ignore_index=True)
+# return final
 ```
 
 ## 7.3. Setting the model engines
