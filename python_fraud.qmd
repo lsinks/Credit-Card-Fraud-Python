@@ -47,7 +47,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from skimpy import skim
-
 ```
 
 Setting a palette for seaborn. I like viridis and it is color-blind friendly.
@@ -72,12 +71,13 @@ Looking at the data
 ```{python}
 #| label: view-data
 fraud.head()
-
 ```
 
 # 4. Validation of data types
 
-I examine the dataset via `skim` and make sure all data elements are as expected. `skim` is a function in the [skimr package](https://cran.r-project.org/web/packages/skimr/index.html) that provides a high-level summary of the data. The output is a dataframe, [so it can be manipulated and formatted more nicely](https://lsinks.github.io/posts/2023-03-24-tidytuesday-figure-polishing/#skimr-to-understand-your-data) than the output of `summary()`.
+I examine the dataset via `skim` from `skimpy` and make sure all data elements are as expected. This package was inspired by the r package `skimr`. I find `skimpy`/`skimr` give a richer output than `describe()` or `summary()`.
+
+This looks nicer when rendered than in the console.
 
 ```{python}
 #| label: skim-data
@@ -87,7 +87,7 @@ skim(fraud)
 
 Everything looks okay, and I am lucky because there is no missing data. I will not need to do cleaning or imputation.
 
-I see that `is_fraud` is coded as 0 or 1, and the mean of this variable is 0.00525. The number of fraudulent transactions is very low, and we should use treatments for imbalanced classes when we get to the fitting/ modeling stage.
+I see that `is_fraud` is coded as 0 or 1, and the mean of this variable is 0.0052. The number of fraudulent transactions is very low, and I should use treatments for imbalanced classes when we get to the fitting/ modeling stage.
 
 # 5. Do all variables have sensible types?
 
@@ -147,44 +147,84 @@ The predictors `category` and `job` are transformed into factors.
 #| label: convert-strings-to-factors
 
 fraud["category"] = fraud["category"].astype("category")
-fraud["job"] = fraud["job"].astype("category")
+print("Category: ")
+fraud["category"].nunique()
 
-fraud["category"].dtype
-fraud["job"].dtype
+fraud["job"] = fraud["job"].astype("category")
+print("Job: ")
+fraud["job"].nunique()
+
 
 ```
 
-From the skim output, I see that `category` has 14 unique values, and `job` has 163 unique values. The dataset is quite large, with 339,607 records, so these variables don't have an excessive number of levels at first glance. However, it is worth seeing if I can compact the levels to a smaller number.
+I see that `category` has 14 unique values, and `job` has 163 unique values. The dataset is quite large, with 339,607 records, so these variables don't have an excessive number of levels at first glance. However, it is worth seeing if I can compact the levels to a smaller number.
 
-#### Why do we care about the number of categories and whether they are "excessive"?
-
-Consider the extreme case where a dataset had categories that only contained one record each. There is simply insufficient data to make correct predictions using category as a predictor on new data with that category label. Additionally, if your modeling uses dummy variables, having an extremely large number of categories will lead to the production of a huge number of predictors, which can slow down the fitting. This is fine if all the predictors are useful, but if they aren't useful (as in the case of having only one record for a category), trimming them will improve the speed and quality of the data fitting.
-
-If I had subject matter expertise, I could manually combine categories. For example, in this dataset, the three largest categories in `job` are surveying-related and perhaps could be combined. If you don't have subject matter expertise, or if performing this task would be too labor intensive, then you can use cutoffs based on the amount of data in a category. If the majority of the data exists in only a few categories, then it might be reasonable to keep those categories and lump everything else in an "other" category or perhaps even drop the data points in smaller categories.
+I don't want to repeat what I said when I first did this analysis, so please see BLAH for more detail.
 
 Another way to evaluate the compactness is to [make a cumulative plot](https://stackoverflow.com/questions/15844919/cumulative-plot-%20using-ggplot2). This looks at the proportion of data that is described as you add categories.
 
 ```{python}
 #| label: compactness
-
-
-
 plt.clf()
-fig, ax = sns.ecdfplot(data = fraud, x = "category", stat = 'proportion', color = "darkcyan")
+ax = sns.ecdfplot(data = fraud, x = "category", stat = 'proportion', color = "darkcyan")
 ax.set_title("Exploring Categorical Variables")
 plt.xticks(rotation=45)
-
+plt.tight_layout()
 plt.show()
 ```
 
-If you look at Figure 1A, roughly 75-80 categories have to be included to capture 80% of the data. For Figure 1B, roughly ten categories have to be included. Ideally, you'd like a very steep curve initially (where a "small number" of categories cover the "majority" of the data) and then a long, shallow tail approaching 100% that corresponds to the data to be binned in "other" or dropped. There aren't hard and fast rules on making these decisions. I decided to use 80% as my threshold. Both of these curves look relatively shallow to me, so I decided not to do any binning, grouping, or dropping of levels.
+The ecdf plot prints with the categories in alpha order. I'd like them in size order.
 
-I decided to look at all the categories of transactions just to see which ones were the most common.
+```{python}
+fraud.value_counts("category", sort = True)
+
+
+
+
+```
+
+HOW DO I DO THIS WITHOUT TYPING EVERYTHING IN. I HATE PANDAs.
+
+```{python}
+my_order = ["gas_transport", "grocery_pos", "home", "shopping_pos", "kids_pets", "shopping_net", "personal_care","entertainment","food_dining","health_fitness",  
+"misc_pos","misc_net", "grocery_net","travel"]
+
+#dfs["A"] = dfs["A"].cat.reorder_categories(["a", "b", "e"])
+fraud["category_new"] = fraud["category"].cat.reorder_categories(my_order, ordered = True)
+
+```
+
+blah
+
+```{python}
+fraud["category_new"]
+```
+
+Now try the edcf plot
+
+```{python}
+ax = sns.ecdfplot(data = fraud, x = "category_new", stat = 'proportion', color = "darkcyan")
+ax.set_title("Exploring Categorical Variables")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+```
+
+80 PERCENT THRESHOLD AND THE JOBS PLOT
+
+```{python}
+plt.clf()
+fraud.value_counts("category", sort = True).cumsum().plot(color= "darkcyan")
+ax.set_title("Exploring Categorical Variables")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+```
 
 ```{python}
 #| label: category-levels
 
-fraud.value_counts("category", sort = True).plot(kind = "bar", color = "darkcyan")
+fraud.value_counts("category_new").plot(kind = "bar", color = "darkcyan")
 plt.xticks(rotation=45)
 plt.show()
 ```
@@ -203,16 +243,14 @@ fraud = fraud.drop(columns = ["merchant","trans_num"])
 
 ## 5.2. Looking at the geographic data
 
-This data is coded as numeric (latitude and longitude) or character (city/state), but we can recognize it as geographic data and treat it appropriately.
-
-First, there are two sets of geographic data related to the merchant. The location of the merchant and where the transaction occurred. I create scatter plots of latitude and longitude separately, because I want to check the correlation between the two sources of data (merchant and transaction). I create a shared legend following the article [here](https://wilkelab.org/cowplot/articles/shared_legends.html).
+The geographic data is a confusing mess, as I discovered when I started playing with Tableau.
 
 ```{python}
 #| label: transaction-merchant-coords
 # Code Block 10: Comparing Merchant and Transaction Locations
 
 # calculate correlations
-fraud.corr(numeric_only=True)
+#fraud.corr(numeric_only=True)
 #cor_long = fraud.corr("long", "merch_long")
 
 #cor_lat
@@ -253,7 +291,7 @@ I calculate the `age` from the `dob` and visualize them both.
 # Code Block 17: Looking at dob
 
 plt.clf()
-sns.histplot(x = "dob", data = fraud, bins = 10)
+sns.histplot(x = "dob", data = fraud, bins = 10, color = "darkcyan")
 plt.show()
 
 ```
@@ -266,14 +304,14 @@ start_date
 fraud["age"] = np.floor((start_date - fraud['dob'])/np.timedelta64(1,'Y'))
 
 plt.clf()
-sns.histplot(x = "age", data = fraud, bins = 10)
+sns.histplot(x = "age", data = fraud, bins = 10, color = "darkcyan")
 plt.show()
 ```
 
-These don't match the R analysis.
+These don't match the R analysis. DOB looks closer, but the age has a completely different shape. DIfference bwetween truncate and floor? I make an interval in R using lubridate rather than a simple substraction
 
 ```{python}
-fraud.value_counts("age", sort = False)
+fraud.value_counts("age", sort = True)
 
 ```
 
@@ -298,7 +336,7 @@ fraud = fraud.drop(columns = ["dob"])
 
 Would processing the date-times yield more useful predictors?
 
-First, I want to look at variation in the number of transactions with date-time. I chose to use a histogram with bins corresponding to one month widths.
+First, I want to look at variation in the number of transactions with date-time. I chose to use a histogram with bins corresponding to one month widths. This also doesn't match R.
 
 ```{python}
 plt.clf()
@@ -325,7 +363,26 @@ plt.show()
 fraud.value_counts("day")
 ```
 
-Monday has the highest number of transactions; this could be due to businesses processing orders that came in over the weekend. By default, pandas codes the day of the week as a number where 0 means Monday, 6 means Sunday.
+Monday has the highest number of transactions; this could be due to businesses processing orders that came in over the weekend. By default, pandas codes the day of the week as a number where 0 means Monday, 6 means Sunday. This also doesn't match R. This does look like Tableau though.
+
+```{r}
+library(tidyverse)
+library(reticulate)
+fraud_r <- py$fraud
+
+
+```
+
+Now
+
+```{r}
+fraud_r %>% mutate(weekday = wday(trans_date_trans_time))%>%
+  group_by(weekday)%>% count(weekday)
+
+wday(fraud_r$trans_date_trans_time[1])
+fraud_r$trans_date_trans_time[1]
+#this is not correct locally. It shoudl be a monday.
+```
 
 Now, I look at what time of day do most transactions occur?
 
@@ -413,7 +470,36 @@ instructions for lower diagonal plot here https://seaborn.pydata.org/examples/ma
 plt.clf()
 sns.heatmap(fraud.corr(numeric_only=True), cmap="YlGnBu", annot=True)
 plt.show()
+
+
+
 ```
+
+```{python}
+#https://seaborn.pydata.org/examples/many_pairwise_correlations.html
+
+# Compute the correlation matrix
+corr = fraud.corr(numeric_only=True)
+
+# Generate a mask for the upper triangle
+mask = np.triu(np.ones_like(corr, dtype=bool))
+
+# Set up the matplotlib figure
+f, ax = plt.subplots(figsize=(11, 9))
+
+# Generate a custom diverging colormap
+cmap = sns.diverging_palette(230, 20, as_cmap=True)
+
+# Draw the heatmap with the mask and correct aspect ratio
+sns.heatmap(corr, mask=mask, cmap="YlGnBu", vmax=.3, center=0,
+            square=True, linewidths=.5, cbar_kws={"shrink": .5}, annot=True)
+plt.xticks(rotation=45)
+plt.yticks(rotation=0)
+plt.tight_layout()
+plt.show()
+```
+
+FIX UP THE LABELS. THE DIAG IS NOT PLOTTED BUT I STILL HAVE THE LABEL. TIGHT LAYOUT NOT WORKING
 
 And take one last look at the data and make sure I have the variables I expect.
 
@@ -424,60 +510,62 @@ fraud.info()
 
 ```
 
-# Just a simple Log Reg with no hyper
+Drop new category
 
 ```{python}
-#fraud_dummies = pd.get_dummies(fraud, drop_first= True)
-#X = fraud_dummies.drop("is_fraud", axis = 1) # Features
-#y = fraud_dummies["is_fraud"] # Target variable
+fraud = fraud.drop("category_new", axis = 1)
+fraud.info()
+```
+
+# Loading all the modules
+
+```{python}
+
+
+
+from sklearn.pipeline import Pipeline, make_pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import StandardScaler,LabelBinarizer, OneHotEncoder
-from sklearn.pipeline import Pipeline
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.naive_bayes import GaussianNB
 
-X = fraud.drop("is_fraud", axis = 1) # Features
-y = fraud["is_fraud"] # Target variable
+#from xgboost import XGBClassifier
+from sklearn import model_selection
+from sklearn.utils import class_weight
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import balanced_accuracy_score
 
 from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(X, y, stratify = y, test_size=0.25, random_state=8675309 )
+```
+
+First define the features and the target.
+
+```{python}
+X = fraud.drop("is_fraud", axis = 1) # Features
+y = fraud["is_fraud"] # Target variable
+```
+
+Now I setup the preprocessing recipe. I'm day, hour as numerical. They are really ordinal or circular. Cite paper.
+
+```{python}
 
 
 numeric_features=list(X.select_dtypes('number').columns)
 categorical_features=list(X.select_dtypes('category').columns)
 
-numeric_transformer = Pipeline(steps = ["scaler", StandardScaler()])
-categorical_transformer = Pipeline(steps = ["onehot", OneHotEncoder()])
-
-
-preprocessor = ColumnTransformer(transformers = [("num", numeric_transformer, numeric_features), ("cat", categorical_transformer, categorical_features)])
-
-
 
 ```
 
-Pre-process
+Now define how I want to process each type.
 
 ```{python}
-
-
-rf = Pipeline(steps = [("preprocessor", preprocessor),
-     ("classifier", RandomForestClassifier())])
-
-rf
-
-```
-
-```{python}
-import numpy as np
-
-from sklearn.compose import ColumnTransformer
-from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import Pipeline, make_pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 numeric_preprocessor = Pipeline(
     steps=[
@@ -504,27 +592,36 @@ preprocessor = ColumnTransformer(
 )
 
  
+
+```
+
+Now add a classifier
+
+```{python}
 pipe = make_pipeline(preprocessor, RandomForestClassifier())
 #pipe = make_pipeline(preprocessor, LogisticRegression(max_iter=500))
 pipe  # click on the diagram below to see the details of each step
+
+
 ```
 
 This code is copeid from scikitlearn itself https://scikit-learn.org/stable/auto_examples/miscellaneous/plot_pipeline_display.html#displaying-a-pipeline-chaining-multiple-preprocessing-steps-classifier
 
-now the split
+Now split and stratify the data.
+
+```{python}
+X_train, X_test, y_train, y_test = train_test_split(X, y, stratify = y, test_size=0.25, random_state=8675309 )
+```
+
+Now fit and predict as get the J-index.
 
 ```{python}
 pipe.fit(X_train, y_train)  # apply scaling on training data
 y_pred = pipe.predict(X_test)
 
-from sklearn.metrics import balanced_accuracy_score
+
 bal_acc=balanced_accuracy_score(y_test,y_pred, adjusted=True )
-```
-
-now the fit
-
-```{python}
-
+bal_acc
 ```
 
 # 7. Finding a high performing model
@@ -555,174 +652,25 @@ Explore different method of handling imbalanced class problems
 
 This ends up being 4 x 4 different fits, and keeping track of all the combinations can become difficult. Luckily, tidymodels has a function workflow_set that will create all the combinations and workflow_map to run all the fitting procedures.
 
-TOOK CATEgory out and need to put it back later
-
 ```{python}
-
-
-#new_cols = fraud_dummies.columns[~fraud_dummies.columns.isin(fraud.columns)]
-
-
+#| label: script-workflowset
+classifiers = [KNeighborsClassifier(), RandomForestClassifier(), LogisticRegression()]
 ```
 
-New cols has the info, but I don't know how to join it with the columns.
+Now iterate through
 
 ```{python}
-#feature_cols = ["age", "day", "hour", "log_amt", "category_entertainment", 'category_food_dining',
-       'category_gas_transport', 'category_grocery_net',
-       'category_grocery_pos', 'category_health_fitness', 'category_home',
-       'category_kids_pets', 'category_misc_net', 'category_misc_pos',
-       'category_personal_care', 'category_shopping_net',
-       'category_shopping_pos', 'category_travel']
-
-
-```
-
-make a smaller dataset for testing.
-
-```{python}
-fraud_small =fraud_dummies.groupby('is_fraud', group_keys=False).apply(lambda x: x.sample(200))
-```
-
-```{python}
-
-#feature_cols = ["age", "day", "hour", "log_amt"]
-#X = fraud_small[feature_cols] # Features
-#y = fraud_small["is_fraud"] # Target variable
-
-#X = fraud_dummies.drop("is_fraud", axis = 1) # Features
-#y = fraud_dummies["is_fraud"] # Target variable
-
-```
-
-## 7.1. Splitting the data
-
-```{python}
-
-
-```
-
-First, preparation work. Here, I split the data into a testing and training set. I also create folds for cross-validation from the training set. (Added stratify. Not sure it works.)
-
-```{python}
-#| label: splits-and-folds
-# Code Block 30 : Train/Test Splits & CV Folds 
-
-from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(X, y, stratify = y, test_size=0.25, random_state=8675309 )
-
-```
-
-## 7.2. Creating recipes
-
-Next, I create recipes that do preprocessing of the data- making dummy variables, normalizing, and removing variables that only contain one value (`step_zv(all_predictors())`). The processing will be applied to both the training and testing data as you move through the workflow.
-
-I used the chart found in [Appendix A](https://www.tmwr.org/pre-proc-table.html) of the Tidy Modeling with R by Max Kuhn and Julia Silge to choose the preprocessing of data. Some models require specific types of preprocessing, others don't require it, but it can produce better or faster fitting, and in other cases, the preprocessing isn't required and probably doesn't help. The chart breaks this down for each category of preprocessing model by model. The same preprocessing steps were required or recommended for the models I chose, so I used them across the board. You can create recipes for different models and build a workflow manually to match the models to the proper recipe. This process is covered extensively in [Chapter 15](https://www.tmwr.org/workflow-sets.html) of Tidy Modeling with R.
-
-I use the selector functions (`all_nominal_predictors()`, `all_numerical_predictors()`, etc.) available in the tidymodels framework. A listing of all selector functions usable in tidymodels can be found [here](https://recipes.tidymodels.org/reference/selections.htm). Using selector functions when handling groups of features reduces the chance of mistakes and typos.
-
-I then modify this recipe to handle the imbalanced class problem. I use SMOTE and ROSE hybrid methods to balance the classes. These methods create synthetic data for the minority class and downsample the majority class to balance the classes. I also use downsample, which throws away majority class records to balance the two classes. A good overview is [here](https://www.r-bloggers.com/2019/04/methods-for-dealing-with-imbalanced-data/), and it also provides a tutorial for handling this type of problem with caret, rather than tidymodels. These recipe steps require the [themis package](https://cran.r-project.org/web/packages/themis/index.html).
-
-```{python}
-from sklearn.linear_model import LogisticRegression
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.naive_bayes import GaussianNB
-#from xgboost import XGBClassifier
-from sklearn import model_selection
-from sklearn.utils import class_weight
-from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
-```
-
-Try a single regression
-
-```{python}
-# import the class
-from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
-
-pipe = make_pipeline(StandardScaler(), LogisticRegression())
-pipe.fit(X_train, y_train)  # apply scaling on training data
-
-
-pipe.score(X_test, y_test) 
-
-
-```
-
-how did we do?
-
-```{python}
-
-```
-
-```{python}
-#| label: creating-recipes
-# 
-# 
-# def run_exps(X_train: pd.DataFrame , y_train: pd.DataFrame, X_test: pd.DataFrame, y_test: pd.DataFrame) -> pd.DataFrame:
-#     '''
-#     Lightweight script to test many models and find winners
-# :param X_train: training split
-#     :param y_train: training target vector
-#     :param X_test: test split
-#     :param y_test: test target vector
-#     :return: DataFrame of predictions
-#     '''
-#     
-#     dfs = []
-# models = [
-#           ('LogReg', LogisticRegression()), 
-#           ('RF', RandomForestClassifier()),
-#           ('KNN', KNeighborsClassifier()),
-#           ('SVM', SVC()), 
-#           ('GNB', GaussianNB()),
-#         ]
-# results = []
-#     names = []
-#     scoring = ['accuracy', 'precision_weighted', 'recall_weighted', 'f1_weighted', 'roc_auc']
-#     target_names = ['malignant', 'benign']
-# for name, model in models:
-#         kfold = model_selection.KFold(n_splits=5, shuffle=True, random_state=90210)
-#         cv_results = model_selection.cross_validate(model, X_train, y_train, cv=kfold, scoring=scoring)
-#         clf = model.fit(X_train, y_train)
-#         y_pred = clf.predict(X_test)
-#         print(name)
-#         print(classification_report(y_test, y_pred, target_names=target_names))
-# results.append(cv_results)
-#         names.append(name)
-# this_df = pd.DataFrame(cv_results)
-#         this_df['model'] = name
-#         dfs.append(this_df)
-# final = pd.concat(dfs, ignore_index=True)
-# return final
+for classifier in classifiers:
+  pipe_iter = Pipeline(steps=[("Preprocessor", preprocessor), ("Classifier", classifier)])
+  pipe_iter.fit(X_train, y_train)
+  print(classifier)
+  print("J Index: ")
+  balanced_accuracy_score(y_test, pipe_iter.predict(X_test), adjusted=True )
 ```
 
 ## 7.3. Setting the model engines
 
 Next, I set the engines for the models. I tune the hyperparameters of the elastic net logistic regression and the lightgbm. Random Forest also has tuning parameters, but the random forest model is pretty slow to fit, and adding tuning parameters makes it even slower. If none of the other models worked well, then tuning RF would be a good idea.
-
-```{python}
-#| label: setting-engines
-bootstraps = []
-for model in list(set(final.model.values)):
-    model_df = final.loc[final.model == model]
-    bootstrap = model_df.sample(n=30, replace=True)
-    bootstraps.append(bootstrap)
-        
-bootstrap_df = pd.concat(bootstraps, ignore_index=True)
-results_long = pd.melt(bootstrap_df,id_vars=['model'],var_name='metrics', value_name='values')
-time_metrics = ['fit_time','score_time'] # fit time metrics
-## PERFORMANCE METRICS
-results_long_nofit = results_long.loc[~results_long['metrics'].isin(time_metrics)] # get df without fit data
-results_long_nofit = results_long_nofit.sort_values(by='values')
-## TIME METRICS
-results_long_fit = results_long.loc[results_long['metrics'].isin(time_metrics)] # df with fit data
-results_long_fit = results_long_fit.sort_values(by='values')
-```
 
 ## 7.4. Creating a metrics set
 
@@ -734,47 +682,4 @@ Lastly, I create a metrics set in Code Block 33. Accuracy is generally a terribl
 
 fraud_metrics <-
   metric_set(roc_auc, accuracy, sensitivity, specificity, j_index)
-```
-
-## 7.5. Creating the workflow_set
-
-Next, I create the workflow_set. This is where tidymodels shines. I feed it the 4 recipes and the 4 engines, and it makes all the permutations to fit. (As I mentioned earlier, you can manually create a workflow_set where you assign specific recipes to specific models, but here all recipes work with all models.)
-
-```{python}
-#| label: workflowset
-import matplotlib.pyplot as plt
-import seaborn as sns
-plt.figure(figsize=(20, 12))
-sns.set(font_scale=2.5)
-g = sns.boxplot(x="model", y="values", hue="metrics", data=results_long_nofit, palette="Set3")
-plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-plt.title('Comparison of Model by Classification Metric')
-plt.savefig('./benchmark_models_performance.png',dpi=300)
-```
-
-dshjkg
-
-```{python}
-import matplotlib.pyplot as plt
-import seaborn as sns
-plt.figure(figsize=(20, 12))
-sns.set(font_scale=2.5)
-g = sns.boxplot(x="model", y="values", hue="metrics", data=results_long_nofit, palette="Set3")
-plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-plt.title('Comparison of Model by Classification Metric')
-plt.savefig('./benchmark_models_performance.png',dpi=300)
-```
-
-fdddfs
-
-```{python}
-metrics = list(set(results_long_nofit.metrics.values))
-bootstrap_df.groupby(['model'])[metrics].agg([np.std, np.mean])
-```
-
-asdds
-
-```{python}
-time_metrics = list(set(results_long_fit.metrics.values))
-bootstrap_df.groupby(['model'])[time_metrics].agg([np.std, np.mean])
 ```
