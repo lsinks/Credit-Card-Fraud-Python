@@ -1,0 +1,353 @@
+---
+title: "Dates are Hard"
+description: "An Imbalanced Class Problem"
+twitter-card:
+  image: "thumbnail.png"
+author:
+  - name: Louise E. Sinks
+    url: https://lsinks.github.io/
+date: 07-26-2023
+categories: [Python, Machine Learning, classifiers] # self-defined categories
+citation:
+  url: https://lsinks.github.io/posts/
+image: "thumbnail.png"
+draft: false # setting this to `true` will prevent your post from appearing on your listing page until you're ready!
+format: html
+editor: visual
+---
+
+# 1. Setting Up Python & RStudio
+
+I do Windows, so those with other operating systems should probably just skip this section.
+
+My blog is built using Quarto and I use RStudio for all my writing/ coding. I've been trying to get up to speed in Python and I'm at the point where I really need to just do some projects. I've done some small guided projects at DataCamp, but there is a point where you just need to jump into something bigger. I had previously tried to use Python with the R packages reticulate and tensorflow to do [this project](https://forloopsandpiepkicks.wordpress.com/2021/03/16/how-to-build-your-own-image-recognition-app-with-r-part-1/) I first found on [r-bloggers](https://www.r-bloggers.com/2021/03/how-to-build-your-own-image-recognition-app-with-r-part-2/). (I'll be calling it the bird project, since it was building a ML model to recognize birds.) It was not very successful in many ways. Installing miniconda and the needed packages through R was a painful process for me. And while I finally got it to work, don't really know how I did so, other than trying every suggestion I found when googling about failed installations.
+
+Approaching it with a fresh perspective many months later, I recommend the following. Just install python directly. Don't go through R at all. I uninstalled everything python related (including the r packages) and restarted the computer. (I had tried to install in manually before after the other methods failed, but I just got stuck in a loop of confusing error messages.)
+
+I then chose to install Anaconda, a python version bundled with 200+ data science/ data analysis packages. It also installs things like Jupyter notebook. It took over 2 hours to install and it seemed to be frozen at one step. Be patient and just let it do its thing.
+
+Anaconda comes with "Navigator", which is a point and click interface which is supposed to be more approachable that the command line version of conda. It is slow and I've crashed it numerous times, including once so hard that it would never open again and would just pop up a Windows Internet Explorer page saying to use Microsoft Edge instead. (I did that by trying to install a palmers penguins package that I found used in a tutorial on how to use R and Python together in RStudio.) I could only restore the Navigator by unistalling Anaconda and reinstalling it.
+
+So install everything else you need through the conda terminal. I suspect that miniconda (which doesn't include the packages would also work fine, but again, installed separately from RStudio/ reticulate.)
+
+Then, once everything has installed, go to RStudio... Tools... Global Options and Python. It should have your version of conda/python right there. If not, go to the selector. You'll have 3 tabs- System, Virtual, and Conda. Go to conda and select your version.
+
+# 2. Running Python, Running R, or What?
+
+## Pure Python
+
+It turns out now there are a ton of different things you can do. You just code in Python. Choose new file... Python script and a .py file is created. This is analogous to an .R file. It is a plain text file and you code in the language you should.
+
+## Pure(?) R
+
+This is what the bird project was doing. The front end was all R, but through Keras/ reticulate/ tensorflow R packages, the behind the scenes modeling was done in python. The file is a R file, and the code you type is R code, but some of the heavy thinking is done in python. That's why I put a question mark for pure- from the coding perspective, you are working in R, but there is a bunch of Python stuff happening.
+
+## R and Python both
+
+You can also code in both R and Python and access the variables generated in each environment. I'm doing that here in Quarto. I can set each code chunk as either R or python. (by typing {python} or {r} as needed in the curly braces that start a code chunk). Quarto also supports Julia and Observable, if you code in those languages as well.
+
+Why would you code in multiple languages? Some things might be easier in one language than the other. In my case, as I mentioned, I'm trying to level up my Python skills. I thought I'd start by recreating the Credit Card Fraud project I've done before. I talk about why I keep working with this dataset [here](https://lsinks.github.io/currentprojects.html), but a big part of the reason is that I can cross check myself. So here I am going to use both R and Python to explore date and date-time variables in that dataset because I found discrepancies between the analysis I did in the two languages.
+
+# 3. The Dataset- Credit Card Fraud
+
+The dataset (Credit Card Fraud) can also be found at the Datacamp workspace. To access the dataset and the data dictionary, you can create a new notebook on datacamp using the Credit Card Fraud dataset. That will produce a notebook like [this](https://app.datacamp.com/workspace/w/f3a94059-683b-4bc6-b354-9b98cf3d5242/edit) with the dataset and the data dictionary.
+
+The original source of the data (prior to preparation by DataCamp) can be found [here](https://www.kaggle.com/kartik2112/fraud-detection?select=fraudTrain.csv). I'm going to load this data in both R and Python.
+
+# 4. Set-up steps
+
+Loading the necessary libraries for Python. Note that the first Python chunk is SLOW... reticulate starts up in the background and it takes a while for everything to spin up.
+
+```{python}
+#| label: loading-libraries-python
+#| warning: false
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+from skimpy import skim
+```
+
+Now the libraries for R.
+
+```{r}
+#| label: loading-libraries-r
+#| warning: false
+library(tidyverse)
+```
+
+# Loading the Dataset
+
+First in Python
+
+```{python}
+#| label: import-data-python
+
+fraud_py = pd.read_csv("credit_card_fraud.csv", parse_dates = ["dob", "trans_date_trans_time"]) 
+
+```
+
+Now in R.
+
+```{r}
+#| label: import-data-r
+fraud_r = read_csv("credit_card_fraud.csv")
+```
+
+You absolutely don't have to load the data twice. I know there is a problem with the date-times and I wonder if the parsing during import is part of it. (I'm pretty sure it isn't because I did pass some data from the python df to R in the other project and R messed it up too.)
+
+I only care about dates and date times, so I'm going to drop everything else.
+
+Python
+
+```{python}
+fraud_py = fraud_py[["dob", "trans_date_trans_time"]]
+```
+
+R
+
+```{r}
+fraud_r <- fraud_r %>%
+  select(dob, trans_date_trans_time)
+```
+
+Now in the environment pane of RStudio, there is a small dropdown that lets you select between the R and Python environments. You can then use the RStudio viewer to examine the data as you wish. It defaults to the environment of the last code chunk you ran.
+
+Let's look at the data.
+
+```{python}
+#| label: skim-data-py
+
+skim(fraud_py)
+```
+
+Now R
+
+```{r}
+#| label: skim-data-r
+
+skimr::skim(fraud_r)
+```
+
+Python seems to be treating both of them as date-times.
+
+```{python}
+#| label: data-type-py
+
+fraud_py.dtypes
+
+```
+
+Weirdly, the hours for the dob changes between 19:00:00 and 20:00:00 when you look in the viewer. If you just use the head function, it displays it as a date. That's a bit odd.
+
+```{python}
+fraud_py["dob"].head()
+```
+
+Let's look at R.
+
+```{r}
+glimpse(fraud_r)
+
+```
+
+R does recognize these as different types of object.
+
+Just for fun, what does R think of the python data?
+
+Normally, I load the libraries up front, but this is a bit funny, so I did it here. While reticulate has been running as writing messages to the console, somehow, it isn't activated in the R code chunks without being loaded as a library.
+
+```{r}
+library(reticulate)
+glimpse(py$fraud_py)
+```
+
+So, R thinks the python version is a dttm object
+
+```{python}
+r.fraud_r.dtypes
+```
+
+On the other hand, python has no idea what R's dob variable is- it defined it as an object.
+
+The details of the nature of dob are probably important to know at some point, but I don't think they matter practically for this project.
+
+## Visualizing DOB
+
+```{python}
+#| label: dob-viz-py
+
+plt.clf()
+sns.histplot(x = "dob", data = fraud_py, bins = 10, color = "darkcyan")
+plt.show()
+
+```
+
+Now R. This code is cut and paste directly from BLAH.
+
+```{r}
+#summary(fraud$dob) #if you wanted a printed summary stats
+
+ggplot(fraud_r, aes(dob)) +
+  geom_histogram(color = "darkcyan",
+                 fill = "darkcyan" ,
+                 bins = 10) +
+  #ggtitle("How old are card Holders?") +
+  ylab("Count") +
+  xlab("Date of Birth") 
+
+
+```
+
+So close but yet not the same! So I guess dob is a problem after all.
+
+```{python}
+t1 = fraud_py.value_counts("dob")
+t2 = r.fraud_r.value_counts("dob")
+```
+
+Checking equality
+
+```{python}
+t1.equals(t2)
+```
+
+Now in R
+
+```{r}
+r1 = py$fraud_py %>% group_by(dob) %>% count(sort = TRUE)
+r2 = fraud_r %>% group_by(dob) %>% count(sort = TRUE)
+```
+
+Equality
+
+```{r}
+r1 == r2
+
+```
+
+Okay, fine, they are the same except for the date vs. date-time silliness.
+
+We need to move the date out of the index.
+
+```{python}
+t1_df = t1.to_frame()
+```
+
+```{r}
+r1 %>% add_column(py$t1_df)
+
+
+
+```
+
+```{python}
+#| label: calculating-plotting-age
+#first transaction
+start_date = fraud["trans_date_trans_time"].min()
+start_date
+fraud["age"] = np.floor((start_date - fraud['dob'])/np.timedelta64(1,'Y'))
+
+plt.clf()
+sns.histplot(x = "age", data = fraud, bins = 10, color = "darkcyan")
+plt.show()
+```
+
+These don't match the R analysis. DOB looks closer, but the age has a completely different shape. DIfference bwetween truncate and floor? I make an interval in R using lubridate rather than a simple substraction
+
+```{python}
+fraud.value_counts("age", sort = True)
+
+```
+
+The head and tail values match, but the ones in the middle don't.
+
+The ages seem reasonable (calculated relative to the earliest date of transactions). There are a few thousand 17-year-olds, which is too young to have their own credit card, but it is plausible that they would be an authorized user on their parents' card. `age` seems a more reasonable variable than `dob`, so `dob` is also dropped from the dataset. For example, scammers might be more likely to target 90-year-olds. The age is the feature that leads to them being targeted, not the birth year. The birth year is related to age through the current date- in 10 years, a new cohort of birth years would be targeted if age is the important feature. So the `age` feature is more robust to passing time than `dob`.
+
+```{python}
+# Code Block 18: Removing dob
+
+fraud = fraud.drop(columns = ["dob"])
+
+```
+
+## 5.4. Looking at the date-times
+
+**date-time**
+
+`trans_date_trans_time`, Transaction DateTime
+
+**Questions**
+
+Would processing the date-times yield more useful predictors?
+
+First, I want to look at variation in the number of transactions with date-time. I chose to use a histogram with bins corresponding to one month widths. This also doesn't match R.
+
+```{python}
+plt.clf()
+sns.histplot(x= "trans_date_trans_time", data = fraud, bins = 24)
+plt.xticks(rotation=45)
+plt.show()
+```
+
+Next, I will break the transaction date-time into day of the week and hour.
+
+```{python}
+#| label: day-transactions
+# Code Block 20: 
+
+#fraud["day"] = datetime.weekday(fraud["trans_date_trans_time"])
+#hours = fraud["trans_date_trans_time"].hour
+fraud["day"] = fraud["trans_date_trans_time"].dt.weekday
+fraud["hour"] = fraud["trans_date_trans_time"].dt.hour
+
+plt.clf()
+sns.histplot(x= "day", data= fraud, bins = 7)
+plt.show()
+
+fraud.value_counts("day")
+```
+
+Monday has the highest number of transactions; this could be due to businesses processing orders that came in over the weekend. By default, pandas codes the day of the week as a number where 0 means Monday, 6 means Sunday. This also doesn't match R. This does look like Tableau though.
+
+```{r}
+library(tidyverse)
+library(reticulate)
+fraud_r <- py$fraud
+
+
+```
+
+Now
+
+```{r}
+fraud_r %>% mutate(weekday = wday(trans_date_trans_time))%>%
+  group_by(weekday)%>% count(weekday)
+
+wday(fraud_r$trans_date_trans_time[1])
+fraud_r$trans_date_trans_time[1]
+#this is not correct locally. It shoudl be a monday.
+```
+
+Now, I look at what time of day do most transactions occur?
+
+```{python}
+#| label: hour-transactions-graph
+# Code Block 21: What time do transactions occur
+plt.clf()
+sns.histplot(x = "hour", data = fraud, bins = 24)
+plt.show()
+
+```
+
+This data honestly looks funny to me. I might expect that most transactions would occur during normal business hours (\~9-5) or more occur during lunch or after work, but what we see is a lower number of transactions from midnight to \~ 2 pm and then a higher number of transactions from 2 pm until midnight. The odd pattern could be a sign that something is wrong with the data (perhaps timezones aren't being encoded properly?), or it could be simply a lack of subject matter knowledge (for example, transactions are pre-authorized at the time of sale and processed later, and the transaction time is the processing time, not the sale time.) Of course, this is also a synthetic dataset, so this pattern may be simply the result of user input choices when the set was generated. If this were a real dataset, I'd chase this down.
+
+```{python}
+#| label: remove-transdatetranstime
+# Code Block 23:
+#removing the original variable and keeping the component variables.
+fraud = fraud.drop(columns =["trans_date_trans_time"])
+```
+
+## 
