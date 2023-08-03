@@ -114,7 +114,7 @@ As I go through the different classes of variables, I will provide information f
 
 Strings are usually not a useful format for classification problems. The strings should be converted to factors, dropped, or otherwise transformed.
 
-***5.1.1. Strings to Factors*** (Code Block 6 - 8)
+***5.1.1. Strings to Factors***
 
 -   `category`, Category of Merchant
 -   `job`, Job of Credit Card Holder
@@ -178,9 +178,6 @@ The ecdf plot prints with the categories in alpha order. I'd like them in size o
 ```{python}
 fraud.value_counts("category", sort = True)
 
-
-
-
 ```
 
 HOW DO I DO THIS WITHOUT TYPING EVERYTHING IN. I HATE PANDAs.
@@ -210,7 +207,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-80 PERCENT THRESHOLD AND THE JOBS PLOT
+80 PERCENT THRESHOLD AND THE JOBS PLOT. Why does it only show 7 categories
 
 ```{python}
 plt.clf()
@@ -223,7 +220,7 @@ plt.show()
 
 ```{python}
 #| label: category-levels
-
+plt.clf()
 fraud.value_counts("category_new").plot(kind = "bar", color = "darkcyan")
 plt.xticks(rotation=45)
 plt.show()
@@ -256,11 +253,11 @@ The geographic data is a confusing mess, as I discovered when I started playing 
 #cor_lat
 #cor_long
 plt.clf()
-sns.pairplot(fraud, vars = ["long", "merch_long"])
+sns.pairplot(fraud, vars = ["long", "merch_long"], color = "darkcyan")
 plt.show()
 
 plt.clf()
-sns.pairplot(fraud, vars = ["lat", "merch_lat"])
+sns.pairplot(fraud, vars = ["lat", "merch_lat"], color = "darkcyan")
 plt.show()
 ```
 
@@ -336,7 +333,7 @@ fraud = fraud.drop(columns = ["dob"])
 
 Would processing the date-times yield more useful predictors?
 
-First, I want to look at variation in the number of transactions with date-time. I chose to use a histogram with bins corresponding to one month widths. This also doesn't match R.
+First, I want to look at variation in the number of transactions with date-time. I chose to use a histogram with bins corresponding to one month widths. **This also doesn't match R.**
 
 ```{python}
 plt.clf()
@@ -363,13 +360,12 @@ plt.show()
 fraud.value_counts("day")
 ```
 
-Monday has the highest number of transactions; this could be due to businesses processing orders that came in over the weekend. By default, pandas codes the day of the week as a number where 0 means Monday, 6 means Sunday. This also doesn't match R. This does look like Tableau though.
+Monday has the highest number of transactions; this could be due to businesses processing orders that came in over the weekend. By default, pandas codes the day of the week as a number where 0 means Monday, 6 means Sunday. **This also doesn't match R. This does look like Tableau though.**
 
 ```{r}
 library(tidyverse)
 library(reticulate)
 fraud_r <- py$fraud
-
 
 ```
 
@@ -384,13 +380,13 @@ fraud_r$trans_date_trans_time[1]
 #this is not correct locally. It shoudl be a monday.
 ```
 
-Now, I look at what time of day do most transactions occur?
+Now, I look at what time of day do most transactions occur? **(Are there two different timezones?)**
 
 ```{python}
 #| label: hour-transactions-graph
 # Code Block 21: What time do transactions occur
 plt.clf()
-sns.histplot(x = "hour", data = fraud, bins = 24)
+sns.histplot(x = "hour", data = fraud, bins = 24, color = "darkcyan")
 plt.show()
 
 ```
@@ -493,9 +489,9 @@ cmap = sns.diverging_palette(230, 20, as_cmap=True)
 # Draw the heatmap with the mask and correct aspect ratio
 sns.heatmap(corr, mask=mask, cmap="YlGnBu", vmax=.3, center=0,
             square=True, linewidths=.5, cbar_kws={"shrink": .5}, annot=True)
-plt.xticks(rotation=45)
+#plt.xticks(rotation=45)
 plt.yticks(rotation=0)
-plt.tight_layout()
+#plt.tight_layout()
 plt.show()
 ```
 
@@ -517,11 +513,37 @@ fraud = fraud.drop("category_new", axis = 1)
 fraud.info()
 ```
 
-# Loading all the modules
+# 7. Finding a high performing model
+
+(https://towardsdatascience.com/quickly-test-multiple-models-a98477476f0)
+
+I'm planning to study the following models and methods of handling imbalanced class problems.
+
+Explore different classification models
+
+1.  logistic regression
+
+2.  elastic net logistic regression
+
+3.  lightgbm
+
+4.  random forest
+
+Explore different method of handling imbalanced class problems
+
+1.  do nothing
+
+2.  SMOTE
+
+3.  ROSE
+
+4.  downsample
+
+This ends up being 4 x 4 different fits, and keeping track of all the combinations can become difficult. In R, the tidymodels package has a function workflow_set that will create all the combinations and workflow_map to run all the fitting procedures. In Python, the functionality of pipeline combined with some loops seem to be the method of choice for handling multiple models.
+
+## 7.1 Loading all the modules
 
 ```{python}
-
-
 
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.compose import ColumnTransformer
@@ -545,21 +567,25 @@ from sklearn.metrics import balanced_accuracy_score
 from sklearn.model_selection import train_test_split
 ```
 
-First define the features and the target.
+## 7.2 Defining the Features and Target
+
+First define the features and the target. In R, you connect the dependent and independent variables via a formula, but in Python, you separate them into two different dataframes. Using an uppercase X for the features and a lowercase y for the target seems to be a common convention.
 
 ```{python}
 X = fraud.drop("is_fraud", axis = 1) # Features
 y = fraud["is_fraud"] # Target variable
 ```
 
-Now I setup the preprocessing recipe. I'm day, hour as numerical. They are really ordinal or circular. Cite paper.
+## 7.3 Defining the preprocessing steps.
+
+Now I setup the preprocessing recipe. Here, you need to separate out the columns by type and apply the preprocessing steps to the different batches of of columns. In Tidymodels, you build a single recipe, but you can specify at each step which columns or types of columns you apply the preprocessing to. I'm handling day, hour as numerical. They are really ordinal or circular. Cite paper.
+
+I have numeric features (log_amt, day, hour) and categoric features (category)
 
 ```{python}
 
-
 numeric_features=list(X.select_dtypes('number').columns)
 categorical_features=list(X.select_dtypes('category').columns)
-
 
 ```
 
@@ -595,25 +621,26 @@ preprocessor = ColumnTransformer(
 
 ```
 
-Now add a classifier
+## 7.4 Now add a classifier
 
 ```{python}
 pipe = make_pipeline(preprocessor, RandomForestClassifier())
 #pipe = make_pipeline(preprocessor, LogisticRegression(max_iter=500))
 pipe  # click on the diagram below to see the details of each step
 
-
 ```
 
 This code is copeid from scikitlearn itself https://scikit-learn.org/stable/auto_examples/miscellaneous/plot_pipeline_display.html#displaying-a-pipeline-chaining-multiple-preprocessing-steps-classifier
 
-Now split and stratify the data.
+## 7.5 Now split and stratify the data.
 
 ```{python}
 X_train, X_test, y_train, y_test = train_test_split(X, y, stratify = y, test_size=0.25, random_state=8675309 )
 ```
 
-Now fit and predict as get the J-index.
+## 7.6 Test for a Single Model
+
+Lastly, I create a metrics set in Code Block 33. Accuracy is generally a terrible metric for highly imbalanced problems; the model can achieve high accuracy by assigning everything to the majority class. Alternate metrics like [sensitivity](https://en.wikipedia.org/wiki/Sensitivity_and_specificity) or [j-index](https://en.wikipedia.org/wiki/Youden%27s_J_statistic) are better choices for the imbalanced class situation.
 
 ```{python}
 pipe.fit(X_train, y_train)  # apply scaling on training data
@@ -624,40 +651,16 @@ bal_acc=balanced_accuracy_score(y_test,y_pred, adjusted=True )
 bal_acc
 ```
 
-# 7. Finding a high performing model
+## 7.7 Set Up a Batch Process
 
-(https://towardsdatascience.com/quickly-test-multiple-models-a98477476f0)
-
-I'm planning to study the following models and methods of handling imbalanced class problems.
-
-Explore different classification models
-
-1.  logistic regression
-
-2.  elastic net logistic regression
-
-3.  lightgbm
-
-4.  random forest
-
-Explore different method of handling imbalanced class problems
-
-1.  do nothing
-
-2.  SMOTE
-
-3.  ROSE
-
-4.  downsample
-
-This ends up being 4 x 4 different fits, and keeping track of all the combinations can become difficult. Luckily, tidymodels has a function workflow_set that will create all the combinations and workflow_map to run all the fitting procedures.
+### Define the classifiers.
 
 ```{python}
 #| label: script-workflowset
 classifiers = [KNeighborsClassifier(), RandomForestClassifier(), LogisticRegression()]
 ```
 
-Now iterate through
+### Iterate Through
 
 ```{python}
 for classifier in classifiers:
@@ -668,18 +671,19 @@ for classifier in classifiers:
   balanced_accuracy_score(y_test, pipe_iter.predict(X_test), adjusted=True )
 ```
 
-## 7.3. Setting the model engines
+## 7.8 Modify Batch to use CV
 
-Next, I set the engines for the models. I tune the hyperparameters of the elastic net logistic regression and the lightgbm. Random Forest also has tuning parameters, but the random forest model is pretty slow to fit, and adding tuning parameters makes it even slower. If none of the other models worked well, then tuning RF would be a good idea.
+```{python}
 
-## 7.4. Creating a metrics set
 
-Lastly, I create a metrics set in Code Block 33. Accuracy is generally a terrible metric for highly imbalanced problems; the model can achieve high accuracy by assigning everything to the majority class. Alternate metrics like [sensitivity](https://en.wikipedia.org/wiki/Sensitivity_and_specificity) or [j-index](https://en.wikipedia.org/wiki/Youden%27s_J_statistic) are better choices for the imbalanced class situation.
+for classifier in classifiers:
+  pipe_iter = Pipeline(steps=[("Preprocessor", preprocessor), ("Classifier", classifier)])
+  kfold = model_selection.KFold(n_splits=3, shuffle=True, random_state=90210)
+  cv_results = model_selection.cross_validate(pipe_iter, X_train, y_train, cv=kfold, scoring=scoring, verbose = 3)
+  cv_results.fit(X_train, y_train)
+ # print(classifier)
+  #print("J Index: ")
+ # balanced_accuracy_score(y_test, cv_results.predict(X_test), adjusted=True )
 
-```{r}
-#| label: metrics-set
-# Code Block 33: Setting Metrics
 
-fraud_metrics <-
-  metric_set(roc_auc, accuracy, sensitivity, specificity, j_index)
 ```
